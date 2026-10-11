@@ -33,12 +33,12 @@ Checklist — Tasks 1–6, executed in order. Each task must be verified before 
 
 ## Task 4 — Feature Module 2: Results, Analytics & Moderation (End-to-End)
 
-- [ ] Results aggregation endpoints per specs/04-results-analytics-and-moderation.md: tallies (relational COUNT/GROUP BY), percentages, winner projection, time-series of votes per hour.
-- [ ] Live tally polling on results page with adaptive interval; BarChart renders OptionDTO -> ResultDTO updates in place (no remount).
-- [ ] Admin moderation: close/reopen poll, delete vote (with audit reason), bulk status change, audit log model + list view, staff-only permission classes.
-- [ ] Filtering & pagination on admin vote list (by poll, IP-hash, date range, status); CSV export endpoint.
-- [ ] Telemetry: structured JSON logging with requestId correlation, request timing middleware, vote-event counters.
-- [ ] Error handling: rate-limited 429 toast, 500 fallback boundary on results widget, retry semantics documented.
+- [x] Results aggregation endpoints per specs/04-results-analytics-and-moderation.md: tallies (relational COUNT/GROUP BY), percentages, winner projection, time-series of votes per hour.
+- [x] Live tally polling on results page with adaptive interval; BarChart renders OptionDTO -> ResultDTO updates in place (no remount).
+- [x] Admin moderation: close/reopen poll, delete vote (with audit reason), bulk status change, audit log model + list view, staff-only permission classes.
+- [x] Filtering & pagination on admin vote list (by poll, IP-hash, date range, status); CSV export endpoint.
+- [x] Telemetry: structured JSON logging with requestId correlation, request timing middleware, vote-event counters.
+- [x] Error handling: rate-limited 429 toast, 500 fallback boundary on results widget, retry semantics documented.
 
 ## Task 5 — Routing Shell, Global State & Responsive Verification
 

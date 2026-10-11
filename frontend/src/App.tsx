@@ -5,6 +5,8 @@ import { ToastProvider } from './components/Toast';
 import { PollListPage } from './features/polls/PollListPage';
 import { PollDetailPage } from './features/polls/PollDetailPage';
 import { ComponentShowcasePage } from './features/components/ComponentShowcasePage';
+import { ResultsPage } from './features/results/ResultsPage';
+import { ModerationPage } from './features/moderation/ModerationPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,16 +51,9 @@ function RouteView() {
     return <PollDetailPage pollId={Number(pollDetailMatch[1])} />;
   }
 
-  if (path.startsWith('/polls/') && path.endsWith('/results')) {
-    const pollId = path.split('/')[2];
-    return (
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold">Results for Poll #{pollId}</h2>
-        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Live tally bar charts view shell.</p>
-        </div>
-      </section>
-    );
+  const resultsMatch = path.match(/^\/polls\/(\d+)\/results\/?$/);
+  if (resultsMatch) {
+    return <ResultsPage pollId={Number(resultsMatch[1])} />;
   }
 
   if (path === '/components') {
@@ -66,14 +61,7 @@ function RouteView() {
   }
 
   if (path === '/moderation') {
-    return (
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold">Staff Moderation Console</h2>
-        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Audit logs and poll controls shell.</p>
-        </div>
-      </section>
-    );
+    return <ModerationPage />;
   }
 
   return (

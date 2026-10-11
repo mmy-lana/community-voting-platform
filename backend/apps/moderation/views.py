@@ -135,7 +135,8 @@ class ModerationVoteListView(generics.ListAPIView):
                 raise APIError("VALIDATION_ERROR", "poll must be an integer.", 400)
         voter_ip = params.get("voter_ip")
         if voter_ip:
-            qs = qs.filter(voter_ip=voter_ip)
+            # Substring match on the SHA-256 hash, per spec 04 §2 vote filters.
+            qs = qs.filter(voter_ip__icontains=voter_ip)
         date_from = params.get("from")
         date_to = params.get("to")
         try:

@@ -8,3 +8,4 @@ export { ToastProvider, useToast, type ToastMessage } from './Toast';
 export { Skeleton, type SkeletonProps } from './Skeleton';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Spinner, type SpinnerProps } from './Spinner';
+export { ErrorBoundary, type ErrorBoundaryProps } from './ErrorBoundary';
