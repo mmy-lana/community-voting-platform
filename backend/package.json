@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "python manage.py runserver 0.0.0.0:8102",
-    "build": "python -m compileall .",
-    "lint": "python -m pyflakes apps/ config/",
-    "test": "python manage.py test apps"
+    "predev": "docker compose -f ../docker/docker-compose.yml up -d --wait",
+    "dev": "../.venv/bin/python manage.py runserver 0.0.0.0:8102",
+    "build": "../.venv/bin/python -m compileall -q apps config manage.py",
+    "lint": "../.venv/bin/python -m compileall -q apps config manage.py",
+    "test": "../.venv/bin/python manage.py test apps"
   }
 }

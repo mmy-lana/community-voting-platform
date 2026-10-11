@@ -1,0 +1,1378 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+frontend/
+  src/
+    app/
+      router.tsx
+    styles/
+      tokens.css
+    App.tsx
+    main.tsx
+  index.html
+  package.json
+  tsconfig.json
+  vite.config.ts
+packages/
+  shared/
+    src/
+      dto/
+        index.ts
+      enums/
+        index.ts
+      index.ts
+    package.json
+    tsconfig.json
+specs/
+  01-core.md
+  02-ui-primitives.md
+  03-polls-and-voting.md
+  04-results-analytics-and-moderation.md
+.env.example
+.gitignore
+ARCHITECTURE.md
+package.json
+pnpm-workspace.yaml
+TASKS.md
+tsconfig.json
+turbo.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="frontend/src/app/router.tsx">
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+interface RouterContextType {
+  path: string;
+  navigate: (to: string) => void;
+}
+
+const RouterContext = createContext<RouterContextType>({
+  path: '/',
+  navigate: () => {},
+});
+
+export function useRouter() {
+  return useContext(RouterContext);
+}
+
+export function RouterProvider({ children }: { children: React.ReactNode }) {
+  const [path, setPath] = useState<string>(() => window.location.pathname || '/');
+
+  useEffect(() => {
+    const onPopState = () => setPath(window.location.pathname || '/');
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = (to: string) => {
+    if (to !== window.location.pathname) {
+      window.history.pushState(null, '', to);
+      setPath(to);
+    }
+  };
+
+  return (
+    <RouterContext.Provider value={{ path, navigate }}>
+      {children}
+    </RouterContext.Provider>
+  );
+}
+</file>
+
+<file path="frontend/src/styles/tokens.css">
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #ffffff;
+  --color-surface-dark: #0b1220;
+  --color-ink: #0b1220;
+  --color-ink-inverse: #ffffff;
+  --color-accent: #4338ca;
+  --color-accent-strong: #312e81;
+  --color-voted: #059669;
+  --color-closed: #dc2626;
+  --color-warning: #d97706;
+  --color-border: #e2e8f0;
+
+  --color-chart-1: #4338ca;
+  --color-chart-2: #0ea5e9;
+  --color-chart-3: #f59e0b;
+  --color-chart-4: #10b981;
+  --color-chart-5: #ec4899;
+  --color-chart-6: #8b5cf6;
+
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --text-body-sm: 12px;
+  --text-body: 14px;
+  --text-body-lg: 16px;
+  --text-title: 20px;
+  --text-headline: 28px;
+  --text-display: 40px;
+  --spacing-touch: 44px;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+</file>
+
+<file path="frontend/src/App.tsx">
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { RouterProvider, useRouter } from './app/router';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5000,
+      retry: 1,
+    },
+  },
+});
+
+function RouteView() {
+  const { path, navigate } = useRouter();
+
+  if (path === '/') {
+    return (
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Open Community Polls</h2>
+        <p className="text-gray-600">Select a poll to cast your vote or view current tallies.</p>
+        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
+          <p className="text-sm font-medium text-gray-500">Poll listing shell initialized.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (path.startsWith('/polls/') && path.endsWith('/results')) {
+    const pollId = path.split('/')[2];
+    return (
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Results for Poll #{pollId}</h2>
+        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
+          <p className="text-sm font-medium text-gray-500">Live tally bar charts view shell.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (path.startsWith('/polls/')) {
+    const pollId = path.split('/')[2];
+    return (
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Cast Vote - Poll #{pollId}</h2>
+        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
+          <p className="text-sm font-medium text-gray-500">VoteCard component shell.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (path === '/moderation') {
+    return (
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold">Staff Moderation Console</h2>
+        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
+          <p className="text-sm font-medium text-gray-500">Audit logs and poll controls shell.</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="text-center py-12 space-y-4">
+      <h2 className="text-3xl font-bold">404 - Page Not Found</h2>
+      <p className="text-gray-600">The requested route does not exist.</p>
+      <button
+        onClick={() => navigate('/')}
+        className="px-4 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-strong transition-colors min-h-[44px] min-w-[44px]"
+      >
+        Return Home
+      </button>
+    </section>
+  );
+}
+
+export function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider>
+        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+          <header className="border-b border-border bg-white px-6 py-4">
+            <div className="max-w-6xl mx-auto flex items-center justify-between">
+              <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
+              <nav className="flex space-x-4">
+                <a href="/" className="text-sm font-medium hover:text-accent p-2">Polls</a>
+                <a href="/moderation" className="text-sm font-medium hover:text-accent p-2">Moderation</a>
+              </nav>
+            </div>
+          </header>
+          <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+            <RouteView />
+          </main>
+          <footer className="border-t border-border bg-white px-6 py-4 text-center text-xs text-gray-500">
+            High-contrast voting platform shell. Port 5102.
+          </footer>
+        </div>
+      </RouterProvider>
+    </QueryClientProvider>
+  );
+}
+</file>
+
+<file path="frontend/src/main.tsx">
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { App } from './App';
+import './styles/tokens.css';
+
+const rootElement = document.getElementById('root');
+
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
+</file>
+
+<file path="frontend/index.html">
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Community Polling Platform</title>
+  </head>
+  <body class="bg-surface text-ink antialiased min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+</file>
+
+<file path="frontend/package.json">
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@community/shared": "workspace:*",
+    "@tanstack/react-query": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "uuid": "latest",
+    "zustand": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/uuid": "latest",
+    "@vitejs/plugin-react": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}
+</file>
+
+<file path="frontend/tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@community/shared": ["../packages/shared/src"],
+      "@community/shared/*": ["../packages/shared/src/*"]
+    }
+  },
+  "include": ["src"]
+}
+</file>
+
+<file path="frontend/vite.config.ts">
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath, URL } from 'node:url';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+  server: {
+    port: 5102,
+    host: true,
+  },
+  resolve: {
+    alias: {
+      '@community/shared': fileURLToPath(new URL('../packages/shared/src', import.meta.url)),
+    },
+  },
+});
+</file>
+
+<file path="packages/shared/src/dto/index.ts">
+import type { PollStatus } from '../enums';
+
+export interface OptionDTO {
+  id: number;
+  label: string;
+  position: number;
+  voteCount: number;
+}
+
+export interface PollDTO {
+  id: number;
+  title: string;
+  description: string | null;
+  status: PollStatus;
+  isAnonymous: boolean;
+  allowRevote: boolean;
+  opensAt: string | null;
+  closesAt: string | null;
+  totalVotes: number;
+  leadOptionLabel: string | null;
+}
+
+export interface PollDetailDTO extends PollDTO {
+  options: OptionDTO[];
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface VoteDTO {
+  id: number;
+  pollId: number;
+  optionId: number;
+  createdAt: string;
+}
+
+export interface ResultBucketDTO {
+  optionId: number;
+  label: string;
+  voteCount: number;
+  percentage: number;
+}
+
+export interface ResultDTO {
+  pollId: number;
+  status: PollStatus;
+  totalVotes: number;
+  results: ResultBucketDTO[];
+  winner: { optionId: number; label: string } | null;
+}
+
+export interface TimeSeriesPointDTO {
+  bucketStart: string;
+  voteCount: number;
+}
+
+export interface TimeSeriesResponseDTO {
+  windowFrom: string;
+  windowTo: string;
+  points: TimeSeriesPointDTO[];
+}
+
+export interface AuditLogDTO {
+  id: number;
+  actor: string;
+  action: string;
+  entityType: string;
+  entityId: number;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, string[]> | null;
+}
+
+export interface ResponseMeta {
+  requestId: string;
+  timestamp: string;
+}
+
+export interface ListResponseMeta extends ResponseMeta {
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+  };
+}
+
+export interface ApiResponseEnvelope<T> {
+  success: boolean;
+  data: T | null;
+  error: ApiError | null;
+  meta: ResponseMeta | null;
+}
+
+export interface ApiListResponseEnvelope<T> {
+  success: boolean;
+  data: T | null;
+  error: ApiError | null;
+  meta: ListResponseMeta | null;
+}
+</file>
+
+<file path="packages/shared/src/enums/index.ts">
+export type PollStatus = 'draft' | 'open' | 'closed';
+
+export type SortOrder = 'asc' | 'desc';
+
+export type ErrorCodes =
+  | 'VALIDATION_ERROR'
+  | 'NOT_FOUND'
+  | 'POLL_NOT_OPEN'
+  | 'POLL_EXPIRED'
+  | 'VOTE_DUPLICATE'
+  | 'OPTION_MISMATCH'
+  | 'RATE_LIMITED'
+  | 'AUTH_REQUIRED'
+  | 'PERMISSION_DENIED'
+  | 'IDEMPOTENCY_REPLAY'
+  | 'INTERNAL_ERROR';
+</file>
+
+<file path="packages/shared/src/index.ts">
+export * from './enums';
+export * from './dto';
+</file>
+
+<file path="packages/shared/package.json">
+{
+  "name": "@community/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}
+</file>
+
+<file path="packages/shared/tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"]
+}
+</file>
+
+<file path="specs/01-core.md">
+# Core Specification
+
+## 1. PostgreSQL DDL (Neon Postgres, latest)
+
+```sql
+-- Enums
+CREATE TYPE poll_status AS ENUM ('draft', 'open', 'closed');
+
+-- Polls
+CREATE TABLE polls (
+    id              BIGSERIAL PRIMARY KEY,
+    title           VARCHAR(200)  NOT NULL,
+    description     TEXT          NULL,
+    status          poll_status   NOT NULL DEFAULT 'draft',
+    is_anonymous    BOOLEAN       NOT NULL DEFAULT TRUE,
+    allow_revote    BOOLEAN       NOT NULL DEFAULT FALSE,
+    opens_at        TIMESTAMPTZ   NULL,
+    closes_at       TIMESTAMPTZ   NULL,
+    created_by      VARCHAR(150)  NOT NULL,
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ   NOT NULL DEFAULT now(),
+    CONSTRAINT chk_poll_window CHECK (
+        closes_at IS NULL OR opens_at IS NULL OR closes_at > opens_at
+    ),
+    CONSTRAINT chk_poll_title_len CHECK (char_length(trim(title)) >= 3)
+);
+
+CREATE INDEX idx_polls_status        ON polls (status);
+CREATE INDEX idx_polls_status_opens  ON polls (status, opens_at);
+CREATE INDEX idx_polls_created_at    ON polls (created_at DESC);
+
+-- Options
+CREATE TABLE options (
+    id          BIGSERIAL PRIMARY KEY,
+    poll_id     BIGINT       NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    label       VARCHAR(150) NOT NULL,
+    position    SMALLINT     NOT NULL DEFAULT 0,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now(),
+    CONSTRAINT uniq_option_per_poll UNIQUE (poll_id, label),
+    CONSTRAINT chk_option_label CHECK (char_length(trim(label)) >= 1)
+);
+
+CREATE INDEX idx_options_poll ON options (poll_id, position);
+
+-- Votes (unique-IP guard at DB level)
+CREATE TABLE votes (
+    id           BIGSERIAL PRIMARY KEY,
+    poll_id      BIGINT      NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    option_id    BIGINT      NOT NULL REFERENCES options(id) ON DELETE CASCADE,
+    voter_ip     CHAR(64)    NOT NULL,  -- SHA-256 hex of normalized IP + salt
+    idempotency_key VARCHAR(64) NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uniq_vote_per_poll_voter UNIQUE (poll_id, voter_ip)
+);
+
+CREATE UNIQUE INDEX uniq_vote_idempotency ON votes (poll_id, idempotency_key) WHERE idempotency_key IS NOT NULL;
+CREATE INDEX idx_votes_poll_option  ON votes (poll_id, option_id);
+CREATE INDEX idx_votes_created_at   ON votes (created_at DESC);
+CREATE INDEX idx_votes_poll_created ON votes (poll_id, created_at DESC);
+CREATE INDEX idx_votes_voter_ip     ON votes (voter_ip);
+CREATE INDEX idx_votes_ip_poll      ON votes (voter_ip, poll_id);
+
+-- Tally snapshots (optional cache; source of truth is relational aggregation)
+CREATE TABLE tally_snapshots (
+    id          BIGSERIAL PRIMARY KEY,
+    poll_id     BIGINT      NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+    option_id   BIGINT      NOT NULL REFERENCES options(id) ON DELETE CASCADE,
+    vote_count  INTEGER     NOT NULL,
+    captured_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT uniq_snapshot UNIQUE (poll_id, option_id, captured_at)
+);
+
+CREATE INDEX idx_tally_snapshots_poll_time ON tally_snapshots (poll_id, captured_at DESC);
+
+-- Moderation audit log
+CREATE TABLE audit_log (
+    id          BIGSERIAL PRIMARY KEY,
+    actor       VARCHAR(150) NOT NULL,
+    action      VARCHAR(50)  NOT NULL,        -- e.g. 'poll.close', 'vote.delete'
+    entity_type VARCHAR(50)  NOT NULL,
+    entity_id   BIGINT       NOT NULL,
+    reason      TEXT         NULL,
+    created_at  TIMESTAMPTZ  NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_audit_entity   ON audit_log (entity_type, entity_id);
+CREATE INDEX idx_audit_time     ON audit_log (created_at DESC);
+```
+
+## 2. DRF Serializers (apps/polls/serializers.py, apps/results, apps/moderation)
+
+| Serializer | Fields | Behavior |
+|---|---|---|
+| `OptionSerializer` | id, label, position, vote_count (read-only) | vote_count annotated from aggregation query |
+| `PollListSerializer` | id, title, status, opens_at, closes_at, total_votes, lead_option_label | Optimized list projection; `annotate` counts |
+| `PollDetailSerializer` | list fields + description, is_anonymous, allow_revote, options[] (nested OptionSerializer), created_by, created_at | Nested read; contains per-option tallies for chart |
+| `PollWriteSerializer` (admin) | title, description, status, opens_at, closes_at, is_anonymous, allow_revote, options[] writable | Validates poll window, min 2 options on open |
+| `VoteCreateSerializer` | option_id | Validates: poll open & not expired; option belongs to poll; performs guarded insert. `poll_id` is injected from URL kwargs via `get_serializer_context`, not a serializer field; body contains only `option_id`. |
+| `ResultSerializer` | poll_id, status, total_votes, results[] {option_id, label, vote_count, percentage}, winner | percentage rounded 1 decimal, sums to 100 +-0.1 |
+| `TimeSeriesPointSerializer` | bucket_start, vote_count | hourly buckets, UTC |
+| `TimeSeriesResponseSerializer` | window_from, window_to, points[] (nested TimeSeriesPointSerializer) | maps to TimeSeriesResponseDTO |
+| `AuditLogSerializer` | id, actor, action, entity_type, entity_id, reason, created_at | read-only |
+| `ModerationActionSerializer` | action (enum), entity_id, reason (required for destructive) | dispatches moderation service |
+
+Note: `total_votes` and `lead_option_label` on `PollListSerializer` must use `.annotate(total_votes=Count('votes'), ...)` on the queryset; never computed per-instance.
+All serializers are wrapped by `EnvelopeRenderer` -> `ApiResponseEnvelope<T>` (or `ApiListResponseEnvelope<T>` for lists); DRF `ValidationError` is transformed to `error.details` with stable `ErrorCodes`.
+
+## 3. Seed Requirements (`manage.py seed_polls`)
+
+- Idempotent (`--force` to reseed): upsert by natural key (poll title).
+- Seed 4 polls: (1) open poll "Favorite frontend framework?" with 4 options + ~40 distributed votes from synthetic hashed IPs; (2) open poll with 2 options, near-tie; (3) `draft` poll with 3 options, zero votes; (4) `closed` poll with past closes_at and 120 votes.
+- Synthetic voter IPs use deterministic salt via a separate `SEED_VOTE_SALT` env var (never `VOTE_HASH_SALT`) so unique constraint holds across reseeds without colliding with live voter hashes.
+- Seeds run in a transaction; fail loudly on constraint violation.
+
+## 4. TypeScript DTOs (packages/shared)
+
+```ts
+export type PollStatus = 'draft' | 'open' | 'closed';
+
+export interface OptionDTO {
+  id: number;
+  label: string;
+  position: number;
+  voteCount: number;
+}
+
+export interface PollDTO {
+  id: number;
+  title: string;
+  description: string | null;
+  status: PollStatus;
+  isAnonymous: boolean;
+  allowRevote: boolean;
+  opensAt: string | null;
+  closesAt: string | null;
+  totalVotes: number;
+  leadOptionLabel: string | null;
+}
+
+export interface PollDetailDTO extends PollDTO {
+  options: OptionDTO[];
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface VoteDTO {
+  id: number;
+  pollId: number;
+  optionId: number;
+  createdAt: string;
+}
+
+export interface ResultBucketDTO {
+  optionId: number;
+  label: string;
+  voteCount: number;
+  percentage: number;
+}
+
+export interface ResultDTO {
+  pollId: number;
+  status: PollStatus;
+  totalVotes: number;
+  results: ResultBucketDTO[];
+  winner: { optionId: number; label: string } | null;
+}
+
+export interface TimeSeriesPointDTO {
+  bucketStart: string;
+  voteCount: number;
+}
+
+export interface TimeSeriesResponseDTO {
+  windowFrom: string;
+  windowTo: string;
+  points: TimeSeriesPointDTO[];
+}
+
+export interface AuditLogDTO {
+  id: number;
+  actor: string;
+  action: string;
+  entityType: string;
+  entityId: number;
+  reason: string | null;
+  createdAt: string;
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, string[]> | null;
+}
+
+export interface ResponseMeta {
+  requestId: string;
+  timestamp: string;
+}
+
+export interface ListResponseMeta extends ResponseMeta {
+  pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
+}
+
+export interface ApiResponseEnvelope<T> {
+  success: boolean;
+  data: T | null;
+  error: ApiError | null;
+  meta: ResponseMeta | null;
+}
+
+export interface ApiListResponseEnvelope<T> {
+  success: boolean;
+  data: T | null;
+  error: ApiError | null;
+  meta: ListResponseMeta | null;
+}
+```
+
+## 5. Request / Response Models
+
+| Action | Request body | Response `data` |
+|---|---|---|
+| List polls | query: `status`, `search`, `page`, `pageSize`, `ordering` | `PollDTO[]` + meta.pagination |
+| Poll detail | None | `PollDetailDTO` |
+| Create/update poll (admin) | `PollWrite` JSON | `PollDetailDTO` |
+| Cast vote | `{ "optionId": 42 }` + `Idempotency-Key` header | `VoteDTO` |
+| Results | query: `granularity=hourly&from&to` | `ResultDTO` |
+| Time series | query: `granularity=hourly&from&to` | `TimeSeriesResponseDTO` |
+| Moderation action | `{ "action": "poll.close", "entityId": 7, "reason": "..." }` | `AuditLogDTO` |
+
+## 6. Status Enumerations
+
+- **PollStatus**: `draft` -> `open` -> `closed`
+- **HTTP codes used**: 200, 201, 204, 400, 401, 403, 404, 409, 429, 500.
+- **ErrorCodes**: `VALIDATION_ERROR`, `NOT_FOUND`, `POLL_NOT_OPEN`, `POLL_EXPIRED`, `VOTE_DUPLICATE`, `OPTION_MISMATCH`, `RATE_LIMITED`, `AUTH_REQUIRED`, `PERMISSION_DENIED`, `IDEMPOTENCY_REPLAY`, `INTERNAL_ERROR`.
+</file>
+
+<file path="specs/02-ui-primitives.md">
+# UI Primitives & Design System
+
+## 1. Design Tokens
+
+| Token | Value | Usage |
+|---|---|---|
+| `--color-surface` | `#FFFFFF` | Card base (light) |
+| `--color-surface-dark` | `#0B1220` | App background (dark) |
+| `--color-ink` | `#0B1220` | Primary text (light mode) |
+| `--color-ink-inverse` | `#FFFFFF` | Text on accent |
+| `--color-accent` | `#4338CA` | Vote button / primary CTA |
+| `--color-accent-strong` | `#312E81` | Hover/pressed CTA |
+| `--color-voted` | `#059669` | Selected/voted state |
+| `--color-closed` | `#DC2626` | Closed/expired state |
+| `--color-warning` | `#D97706` | Near-expiry badge |
+| `--color-border` | `#E2E8F0` / `#1E293B` (dark) | Card borders |
+| Bar palette | `#4338CA`, `#0EA5E9`, `#F59E0B`, `#10B981`, `#EC4899`, `#8B5CF6` | BarChart series, WCAG AA on both surfaces |
+| `--radius-card` | `16px` | VoteCard |
+| `--radius-control` | `10px` | Buttons/badges |
+| `--space-1..8` | 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 px | Spacing scale |
+| `--font-sans` | Inter, system-ui fallback | All text |
+| Type scale | 12 / 14 / 16 / 20 / 28 / 40 px (body-sm -> display) | |
+| `--chart-bar-h` | 28px mobile / 32px >=768px | Bar thickness |
+| `--touch-min` | 44px | Minimum touch target |
+
+## 2. Tailwind v4 `@theme` Mapping
+
+```css
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #ffffff;
+  --color-surface-dark: #0b1220;
+  --color-ink: #0b1220;
+  --color-ink-inverse: #ffffff;
+  --color-accent: #4338ca;
+  --color-accent-strong: #312e81;
+  --color-voted: #059669;
+  --color-closed: #dc2626;
+  --color-warning: #d97706;
+  --color-border: #e2e8f0;
+
+  --color-chart-1: #4338ca;
+  --color-chart-2: #0ea5e9;
+  --color-chart-3: #f59e0b;
+  --color-chart-4: #10b981;
+  --color-chart-5: #ec4899;
+  --color-chart-6: #8b5cf6;
+
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --text-body-sm: 12px;
+  --text-body: 14px;
+  --text-body-lg: 16px;
+  --text-title: 20px;
+  --text-headline: 28px;
+  --text-display: 40px;
+  --spacing-touch: 44px;
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+```
+
+## 3. Mobile-First Breakpoint Behavior
+
+| Width | Layout rules |
+|---|---|
+| 360px | Single-column VoteCards; full-width option buttons; BarChart bars full width, labels truncate with ellipsis + `title` attr; 4px outer gutter; bottom sticky vote bar |
+| 390px | Same as 360; slightly larger paddings (16px); type scale unchanged |
+| 430px | At >=430px, all polls show percentages inline-right of option labels within the option row. The stacked full-width layout is unchanged from 360px. |
+| 768px | 2-column card grid; BarChart gains value labels outside bars; modal becomes centered dialog (max-w 560px) |
+| 1024px+ | 3-column grid (list page), max content width 1200px; results page two-pane (chart left, meta/time-series right) |
+
+## 4. Atomic Component Signatures
+
+```ts
+// Button
+interface ButtonProps {
+  variant: 'primary' | 'secondary' | 'danger' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  fullWidth?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}
+
+// Badge
+interface BadgeProps {
+  tone: 'neutral' | 'open' | 'closed' | 'draft' | 'warning';
+  children: React.ReactNode;
+}
+
+// VoteCard
+interface VoteCardProps {
+  poll: PollDetailDTO;
+  selectedOptionId: number | null;
+  hasVoted: boolean;
+  onOptionSelect: (optionId: number) => void;
+  onSubmitVote: (optionId: number) => void;
+  disabled?: boolean;
+  expiryLabel?: string;
+  onOpenResults?: () => void;
+}
+
+// BarChart
+interface BarChartProps {
+  data: ResultBucketDTO[];
+  highlightOptionId?: number | null;
+  maxBarSize?: number;
+  animate?: boolean;
+  showCounts?: boolean;
+  emptyLabel?: string;
+}
+
+// ProgressBar
+interface ProgressBarProps {
+  value: number;
+  color?: string;
+  label: string;
+  size?: 'sm' | 'md';
+}
+
+// Modal
+interface ModalProps {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  role?: 'dialog' | 'alertdialog';
+  initialFocus?: 'first' | 'close';
+}
+
+// Toast
+interface ToastMessage {
+  id: string;
+  tone: 'success' | 'error' | 'info';
+  message: string;
+  autoDismissMs?: number;
+}
+
+// Skeleton
+interface SkeletonProps {
+  variant: 'card' | 'bar-row' | 'text';
+  count?: number;
+}
+
+// EmptyState
+interface EmptyStateProps {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}
+
+// Spinner
+interface SpinnerProps { size?: 16 | 24 | 32; label?: string }
+```
+
+Shared imports: All components import DTO types from `@community/shared` via the configured path alias.
+
+VoteCard Interaction Model: `onOptionSelect` updates local selection state only (no network call). A separate "Cast Vote" button (disabled until a selection is made) triggers `onSubmitVote(selectedOptionId)`. Single-tap auto-submit is not used.
+
+Accessibility contract: VoteCard options are a `role="radiogroup"` with `role="radio"` rows (arrow-key navigation); BarChart is `role="img"` with `aria-label` summary ("Option A leads with 45% of 128 votes") plus a visually-hidden `<table>` fallback; Modal traps focus, restores on close, `Escape` closes.
+</file>
+
+<file path="specs/03-polls-and-voting.md">
+# Polls & Voting Feature Module
+
+## 1. Vote Casting Algorithm
+
+```
+POST /api/v1/polls/{poll_id}/votes/
+Headers: Idempotency-Key: <uuid-v4>
+
+1. Parse + validate body {optionId} -> 400 VALIDATION_ERROR if malformed.
+2. Check idempotency cache (poll_id, idempotency_key) -> if hit, return cached
+   response with same status (201) and header Idempotency-Replayed: true
+   (no second vote row).
+3. BEGIN TRANSACTION (Use READ COMMITTED with SELECT ... FOR UPDATE on the poll row; full SERIALIZABLE isolation is not required and adds unnecessary contention):
+   a. SELECT ... FROM polls WHERE id = {poll_id} FOR UPDATE;
+      -> 404 NOT_FOUND if absent.
+   b. Guard: status must be 'open' -> 409 POLL_NOT_OPEN.
+   c. Guard: now() within [opens_at, closes_at] (if set);
+      closes_at < now() -> 409 POLL_EXPIRED.
+   d. Guard: optionId in poll options -> 400 OPTION_MISMATCH.
+   e. Fast-path SELECT on (poll_id, voter_ip_hash);
+      exists and not allow_revote -> 409 VOTE_DUPLICATE.
+   e-ii. If exists and allow_revote = true:
+      UPDATE votes SET option_id = {optionId} WHERE poll_id = {poll_id} AND voter_ip = {voter_ip_hash};
+      skip INSERT; go to step 4.
+   f. INSERT INTO votes (poll_id, option_id, voter_ip, idempotency_key) ...
+      - UNIQUE (poll_id, voter_ip) violation -> ROLLBACK -> 409 VOTE_DUPLICATE.
+      - UNIQUE (poll_id, idempotency_key) violation -> 409 IDEMPOTENCY_REPLAY
+        (client retried with same key but cache expired; return original
+        semantics without inserting).
+4. COMMIT -> serialize VoteDTO -> 201 Created, envelope success=true.
+5. Normalization: IPv6 -> RFC 5952; IPv4 literal; then
+   voter_ip = sha256(normalized_ip + VOTE_HASH_SALT) hex (64 chars).
+6. Concurrency: the FOR UPDATE poll lock serializes same-poll writers; the
+   DB unique constraint is the final arbiter for races across replicas.
+```
+
+## 2. State Transitions
+
+```
+draft --(open: admin action or opens_at reached)--> open
+open  --(close: admin action or closes_at passed)--> closed
+closed --(reopen: admin moderation action only)--> open
+```
+
+## 3. REST Endpoint Contracts
+
+Base: `http://localhost:8102/api/v1`. All route patterns below are registered under the Django `api/v1/` URL router prefix (e.g. `path('api/v1/', include(...))`). All responses use `ApiResponseEnvelope<T>` (or `ApiListResponseEnvelope<T>`).
+
+### 3.1 List Polls
+- `GET /polls/` — query: `status`, `search`, `ordering`, `page`, `pageSize`.
+- 200 -> `PollDTO[]` + `ListResponseMeta`.
+
+### 3.2 Poll Detail
+- `GET /polls/{id}/` -> 200 `PollDetailDTO`. 404 `NOT_FOUND`.
+
+### 3.3 Create / Update Poll (admin)
+- `POST /polls/` body `PollWrite` -> 201 `PollDetailDTO`.
+- `PATCH /polls/{id}/` -> 200 `PollDetailDTO`.
+- `DELETE /polls/{id}/` -> 204.
+
+### 3.4 Cast Vote
+- `POST /polls/{poll_id}/votes/` body `{ "optionId": number }`, header `Idempotency-Key`.
+- 201 -> `VoteDTO` (cached replay returns 201 with header `Idempotency-Replayed: true`). Errors: 400 `VALIDATION_ERROR` / `OPTION_MISMATCH`; 404 `NOT_FOUND`; 409 `VOTE_DUPLICATE` / `POLL_NOT_OPEN` / `POLL_EXPIRED` (and `IDEMPOTENCY_REPLAY` only when cache expired but DB key row already exists); 429 `RATE_LIMITED` (vote throttle 10/min/IP).
+
+### 3.5 Results
+- `GET /polls/{id}/results/` -> 200 `ResultDTO`.
+
+### 3.6 Health
+- `GET /health/` -> 200 `{ db: "up" }`.
+
+### 3.7 Client Telemetry
+- `POST /telemetry/client-error/` body `{ "route": string, "errorName": string, "requestId": string }`.
+- 202 -> empty envelope `data: null`. Public endpoint (unauthenticated), throttled 5/min/IP.
+
+## 4. Edge Cases
+
+| Case | Behavior |
+|---|---|
+| Double voting (same IP, same poll) | Pre-check fast-path + UNIQUE constraint -> 409 `VOTE_DUPLICATE`; frontend shows inline "You already voted" with results link |
+| Concurrent same-IP requests (race) | Poll row lock serializes; second insert violates UNIQUE -> 409; exactly one 201 |
+| Poll expiry mid-session | Vote submitted after `closes_at` -> 409 `POLL_EXPIRED`; UI disables buttons when effective status is closed |
+| Option deleted while voting | FK + OPTION_MISMATCH pre-check -> 400 |
+| Retried request after network timeout | Same Idempotency-Key -> cached 201 replay, no duplicate row |
+| Draft poll accessed via direct URL | 404 for anonymous; visible + editable for staff |
+| `allow_revote = true` | Existing vote for (poll_id, voter_ip) is UPDATEd (option_id swap) in the same transaction; tallies stay consistent; still audited |
+| IPv6 clients | Normalized per RFC 5952 before hashing; /64 prefix used for guard key to prevent trivial bypass within same subnet |
+| Malformed/missing Idempotency-Key | Treated as fresh request; response header `X-Idempotency: absent` |
+</file>
+
+<file path="specs/04-results-analytics-and-moderation.md">
+# Results, Analytics & Moderation Feature Module
+
+## 1. Results Aggregation Endpoints
+
+### 1.1 Poll Results
+- `GET /api/v1/polls/{id}/results/` -> 200 `ResultDTO`.
+- Relational aggregation via `LEFT JOIN votes GROUP BY option`. Ties result in `winner: null`.
+
+### 1.2 Live Tallies
+- `GET /api/v1/polls/{id}/results/live/` -> 200 `ResultDTO`.
+- Client uses TanStack Query `refetchInterval` adaptive sequence: 2s -> 5s -> 10s -> 30s.
+
+### 1.3 Time Series
+- `GET /api/v1/polls/{id}/results/timeseries/?granularity=hourly&from=ISO&to=ISO`
+- `granularity`: `hourly` (default) | `daily`. Buckets in UTC via `date_trunc`. Response -> `TimeSeriesResponseDTO` containing `{ windowFrom: string, windowTo: string, points: TimeSeriesPointDTO[] }`. Sparse buckets are zero-filled client-side between `windowFrom` and `windowTo` for charting. Window capped at 30 days; 400 `VALIDATION_ERROR` otherwise.
+
+## 2. Admin Moderation Workflows
+
+All moderation endpoints require staff (session or bearer token); mutations record an audit log.
+
+| Endpoint | Method | Purpose | Response |
+|---|---|---|---|
+| `/moderation/polls/{id}/status/` | POST | Transition poll status | 200 `PollDetailDTO` |
+| `/moderation/votes/{id}/` | DELETE | Delete abusive vote | 204 |
+| `/moderation/votes/` | GET | Filtered vote list | 200 `VoteDTO[]` + ListResponseMeta |
+| `/moderation/votes/export/` | GET | CSV export | 200 `text/csv` |
+| `/moderation/polls/bulk-status/` | POST | Transactional bulk close (max 50) | 200 `{ updated: n, skipped: [{id, reason}] }` |
+| `/moderation/audit/` | GET | Moderation audit log | 200 `AuditLogDTO[]` + ListResponseMeta |
+| `/moderation/stats/` | GET | System metrics | 200 `Record<string, number>` |
+
+## 3. Filtering & Pagination
+
+- Explicit server-side query validation.
+- Standard pagination: `page` (1-based), `pageSize` (default 20, max 50). Meta matches `ListResponseMeta`.
+
+## 4. Telemetry
+
+- Structured JSON logging with `X-Request-Id` correlation.
+- Request timing middleware logs DB queries and response durations.
+- Telemetry ingestion at `POST /api/v1/telemetry/client-error/` (throttled 5/min/IP).
+
+## 5. Error Handling
+
+| Situation | Handling |
+|---|---|
+| DB unavailable during tally | 503 envelope `INTERNAL_ERROR` with `Retry-After: 5` |
+| Throttled live polling | 429 adaptive backoff up to 60s |
+| Moderation action conflict | 409 with details |
+| Bulk action partial failure | On bulk failure, the primary transaction rolls back (no polls changed). Audit logging of the aborted attempt uses a separate database connection/transaction outside the rolled-back block (or post-rollback audit write in the exception handler). |
+| Export too large | Hard cap at 100k rows; 400 if window too wide |
+</file>
+
+<file path=".gitignore">
+# Node & dependencies
+node_modules/
+.pnpm-store/
+dist/
+build/
+.turbo/
+
+# Python & Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+ENV/
+*.sqlite3
+staticfiles/
+
+# Environment and local configurations
+.env
+.env.local
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+repomix-output.xml
+</file>
+
+<file path="ARCHITECTURE.md">
+# Community Polling & Voting Engine — Master Specification
+
+SLUG: `community-voting-platform`
+STACK: React (Vite) + Python (Django + DRF) + Neon Postgres
+PORTS: FE `5102` | BE `8102` | DB `5402`
+THEME: High-contrast voting cards with bar charts
+NOTES: Relational vote tallies, unique-IP voting guards, DRF serializers.
+
+## 1. Monorepo Topology (Turborepo)
+
+```
+community-voting-platform/
+├── turbo.json                     # Task pipeline: build, dev, lint, test, db:*
+├── package.json                   # pnpm workspaces root, latest pnpm + Node LTS
+├── pnpm-workspace.yaml            # packages: ["frontend", "backend", "packages/*", "docker"]
+├── frontend/                      # React SPA (Vite), port 5102
+│   ├── src/
+│   │   ├── app/                   # Router shell, providers, error boundaries
+│   │   ├── features/
+│   │   │   ├── polls/             # Feature Module 1: browse, detail, vote casting
+│   │   │   └── results/           # Feature Module 2: live tallies, analytics, moderation
+│   │   ├── components/            # Atomic UI primitives (design-system package re-exports)
+│   │   ├── lib/apiClient.ts       # Unified API client + ApiResponseEnvelope handling
+│   │   ├── lib/store.ts           # Global state store
+│   │   └── styles/tokens.css      # Tailwind v4 @theme token mapping
+├── backend/                       # Django + DRF project, port 8102
+│   ├── config/                    # settings (base/dev/prod), urls, asgi/wsgi
+│   ├── apps/
+│   │   ├── core/                  # ApiResponseEnvelope renderer, pagination, middleware
+│   │   ├── polls/                 # Models: Poll, PollOption, Vote; serializers; viewsets
+│   │   ├── results/               # Aggregation endpoints, tally snapshots, analytics
+│   │   └── moderation/            # Admin workflows, audit log, telemetry
+│   ├── migrations/
+│   ├── management/commands/       # seed_polls.py, init_db.py
+│   └── requirements.txt           # Django latest, DRF latest, psycopg2 (Neon driver), pip
+├── packages/
+│   └── shared/                    # Shared DTOs + status enums (TypeScript), zod schemas
+│       ├── src/dto/               # PollDTO, OptionDTO, VoteDTO, ResultDTO, ApiResponseEnvelope<T>
+│       └── src/enums/             # PollStatus, SortOrder, ErrorCodes
+├── docker/
+│   ├── Dockerfile.frontend
+│   ├── Dockerfile.backend
+│   ├── docker-compose.yml         # FE 5102, BE 8102, DB 5402
+│   └── nginx.conf
+└── .env.example                   # DATABASE_URL, CORS_ORIGINS, SECRET_KEY, ports
+```
+
+### 1.1 Pipeline (turbo.json)
+
+- `build`: frontend -> `vite build`; backend -> `python manage.py collectstatic --noinput` + `python -m compileall`; packages/shared -> `tsc -b`.
+- `dev`: frontend on `5102`, backend on `8102` (Django dev server bound to `0.0.0.0:8102`).
+- `db:init`, `db:migrate`, `db:seed`: backend `manage.py` commands via `DATABASE_URL`.
+- `test`, `lint` parallelized by Turborepo with remote-cacheable hashes.
+
+### 1.2 Ports
+
+| Service   | Port | Notes |
+|-----------|------|-------|
+| Frontend  | 5102 | Vite dev server; CORS origin `http://localhost:5102` |
+| Backend   | 8102 | Django + DRF under `/api/v1/` |
+| Postgres  | 5402 | Neon Postgres via connection pooler; local psql tunnel exposed on 5402 |
+
+## 2. Toolchain
+
+- **Node**: latest LTS; **pnpm**: latest; **React**: latest; **Vite**: latest; **TypeScript**: latest (strict mode).
+- **Frontend Dependencies**: `uuid` and `@types/uuid` explicitly declared in `frontend/package.json`.
+- **Path Aliases**: `tsconfig.json` paths alias `@community/shared` -> `../../packages/shared/src`; mirrored in `vite.config.ts` `resolve.alias`.
+- **Python**: latest stable (3.12+); **pip** with `requirements.txt`; **Django**: latest; **Django REST Framework**: latest; **djangorestframework-camel-case**: latest (camelCase wire formatting).
+- **Database driver**: `psycopg2-binary` (latest) against Neon Postgres using pooled connection string (`?sslmode=require&pgbouncer=true`).
+- **Tailwind CSS**: v4 (CSS-first `@theme` configuration, no `tailwind.config.js` needed).
+- **Turborepo**: latest; **docker compose**: latest spec.
+
+## 3. Global Data Layer
+
+### 3.1 Unified Envelope
+
+Every HTTP response — success or failure — uses the standardized envelope structures. See `packages/shared/src/dto/` — canonical source of truth for all envelope types (`ApiResponseEnvelope<T>`, `ApiListResponseEnvelope<T>`, `ApiError`, `ResponseMeta`, `ListResponseMeta`).
+
+Backend implements this via a custom DRF renderer (`EnvelopeRenderer`), custom paginator (`EnvelopePagination`), and exception handler (`EnvelopeExceptionHandler`) in `apps/core/`:
+- `EnvelopePagination` (extending `PageNumberPagination`) sets `response.list_envelope = True` and populates `response.pagination_meta = { page, pageSize, totalItems, totalPages }`.
+- `EnvelopeRenderer` inspects `getattr(response, 'list_envelope', False)`: when `True`, it constructs and outputs `ListResponseMeta` using `response.pagination_meta`; otherwise, it emits `ResponseMeta`.
+
+### 3.2 API Client (frontend)
+
+- Single `apiClient` wrapping `fetch` with: base URL `http://localhost:8102/api/v1`, JSON serialization, `X-Request-Id` generation (uuid v4 per request), timeout (10s), automatic envelope unwrapping, typed `ApiError` rejection, and retry (idempotent GETs only, max 2, exponential backoff).
+
+### 3.3 State Store
+
+- Server state: TanStack Query (latest) keyed by entity (`polls`, `poll:<id>`, `results:<id>`), stale-while-revalidate; live tallies poll via `refetchInterval` with adaptive backoff (2s -> 5s -> 10s -> 30s).
+- Client state: Zustand (latest) slices — `voteSession` (pollId -> local vote state, optimistic status), `ui` (modal, theme), `auth` (session token).
+- Optimistic updates on vote casting; rollback + error toast on `409 VOTE_DUPLICATE`.
+
+## 4. Security
+
+### 4.1 Auth Strategy
+
+- Public read access to open polls; vote casting is anonymous but IP-guarded (Section 4.3).
+- Admin/moderation endpoints use Django session auth (admin UI) plus a staff API token (`Authorization: Bearer <token>`) for programmatic access; tokens stored hashed.
+- Passwords hashed with Django's default (Argon2); admin-created via `createsuperuser`.
+- CSRF: session-authenticated mutating endpoints require `X-CSRFToken`; pure API bearer paths exempt.
+
+### 4.2 CORS
+
+- `django-cors-headers` (latest), explicit allowlist: `http://localhost:5102` (and `http://127.0.0.1:5102` for dev). Never use wildcard. `CORS_ALLOW_CREDENTIALS=True` for session flows. Preflight cache 1h.
+
+### 4.3 Rate Limiting & Unique-IP Voting Guard
+
+- DRF throttle scopes: `anon` = 60/min, `vote` = 10/min per IP, `results` = 120/min.
+- **Unique-IP vote guard**: DB-level constraint `UNIQUE (poll_id, voter_ip)` on `votes` (see specs/01-core.md) is the source of truth; application-level pre-check is a fast-path only. Hashed storage: `voter_ip` stored as SHA-256 of IP + per-deployment salt (pepper in env `VOTE_HASH_SALT`) to preserve uniqueness without storing raw IPs (privacy). IPv6 normalized (RFC 5952) before hashing. `IntegrityError` on insert -> `409 VOTE_DUPLICATE`.
+- Idempotency: client sends `Idempotency-Key` header (uuid) per vote attempt; backend caches response per (poll_id, key) for 10 min so network retries never double-count.
+
+### 4.4 Error Boundaries & Hardening
+
+- React: top-level `ErrorBoundary` per route + per-widget (BarChart) boundary with fallback UI and retry.
+- Backend: centralized exception handler maps `ValidationError->400`, `PermissionDenied->403`, `NotFound->404`, `IntegrityError->409/500` with safe codes; no stack traces in prod; `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` in prod settings.
+- Input validation: DRF serializer validation only; parameterized ORM queries (never raw SQL string interpolation).
+</file>
+
+<file path="package.json">
+{
+  "name": "community-voting-platform",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  }
+}
+</file>
+
+<file path="pnpm-workspace.yaml">
+packages:
+  - "frontend"
+  - "backend"
+  - "packages/*"
+</file>
+
+<file path="TASKS.md">
+# Tasks Breakdown
+
+Checklist — Tasks 1–6, executed in order. Each task must be verified before the next begins.
+
+## Task 1 — Environment Baseline, Shared Contracts & DB Init
+
+- [ ] Scaffold Turborepo root with pnpm workspaces (`frontend`, `backend`, `packages/shared`, `docker`), `turbo.json` pipelines for build/dev/lint/test.
+- [ ] Initialize frontend: latest Vite + React + TypeScript (strict), Tailwind v4, port 5102 dev server.
+- [ ] Initialize backend: latest Django project `config`, DRF installed, pip `requirements.txt`, port 8102.
+- [ ] Configure Neon Postgres connection via `DATABASE_URL` (psycopg2, sslmode=require); verify connectivity on port 5402 tunnel.
+- [ ] Create `packages/shared` TypeScript DTOs + enums (PollDTO, OptionDTO, VoteDTO, ResultDTO, ApiResponseEnvelope<T>, PollStatus, ErrorCodes) consumed by frontend; mirrored by DRF serializer field naming.
+- [ ] Implement `apps/core`: EnvelopeRenderer, EnvelopeExceptionHandler, pagination, `X-Request-Id` middleware.
+- [ ] `db:init` + `db:migrate` management commands run clean against empty DB; `db:seed` seeds fixture polls/options (see specs/01-core.md seed requirements).
+- [ ] CORS allowlist set to `http://localhost:5102`; smoke test: FE fetches `/api/v1/polls/health` and renders envelope.
+
+## Task 2 — Design System Primitives & Atomic UI
+
+- [ ] Define design tokens in `frontend/src/styles/tokens.css` with Tailwind v4 `@theme` mapping (colors, spacing, radii, typography, bar-chart palette, high-contrast vote states).
+- [ ] Build atomic components with typed props + Storybook-free visual checklist: Button, Badge, VoteCard, BarChart, ProgressBar, Modal, Toast, Skeleton, EmptyState, Spinner.
+- [ ] All interactive elements >= 44x44px touch targets; keyboard reachable; ARIA roles per specs/02-ui-primitives.md.
+- [ ] Responsive layout verified at 360 / 390 / 430 / 768 / 1024+ px breakpoints, mobile-first CSS ordering.
+- [ ] Unit tests for components (Vitest latest + React Testing Library) covering states: default, hover, focus-visible, active, disabled, voted, closed.
+
+## Task 3 — Feature Module 1: Polls & Vote Casting (End-to-End)
+
+- [ ] Backend: `Poll`, `PollOption`, `Vote` models with DDL per specs/01-core.md (unique `(poll_id, voter_ip)`, status enum, FKs, indexes).
+- [ ] DRF serializers (PollListSerializer, PollDetailSerializer, VoteCreateSerializer, nested options) + viewsets per specs/03-polls-and-voting.md.
+- [ ] Vote casting transaction: `SELECT ... FOR UPDATE` poll row, status/expiry checks, insert with unique-constraint catch, `Idempotency-Key` cache, IP hash normalization.
+- [ ] Frontend poll list page (grid of VoteCards, filter by status), poll detail page with vote interaction, optimistic update + rollback on 409.
+- [ ] State transitions draft->open->closed enforced server-side; draft polls invisible to anonymous list/detail.
+- [ ] Edge cases handled + tested: double vote, expired poll, closed poll, malformed IP, concurrent same-IP requests (race via concurrent test).
+- [ ] E2E happy path: load -> vote -> see updated tally bar chart.
+
+## Task 4 — Feature Module 2: Results, Analytics & Moderation (End-to-End)
+
+- [ ] Results aggregation endpoints per specs/04-results-analytics-and-moderation.md: tallies (relational COUNT/GROUP BY), percentages, winner projection, time-series of votes per hour.
+- [ ] Live tally polling on results page with adaptive interval; BarChart renders OptionDTO -> ResultDTO updates in place (no remount).
+- [ ] Admin moderation: close/reopen poll, delete vote (with audit reason), bulk status change, audit log model + list view, staff-only permission classes.
+- [ ] Filtering & pagination on admin vote list (by poll, IP-hash, date range, status); CSV export endpoint.
+- [ ] Telemetry: structured JSON logging with requestId correlation, request timing middleware, vote-event counters.
+- [ ] Error handling: rate-limited 429 toast, 500 fallback boundary on results widget, retry semantics documented.
+
+## Task 5 — Routing Shell, Global State & Responsive Verification
+
+- [ ] Router: `/` (poll list), `/polls/:id` (detail+vote), `/polls/:id/results`, `/moderation` (staff), 404 & error routes; lazy-loaded feature chunks.
+- [ ] Global state wiring: Zustand `voteSession` hydration on navigation, TanStack Query cache invalidation after vote/close actions.
+- [ ] Full responsive pass across all routes at 360/390/430/768/1024+; modal focus trap on mobile; safe-area insets honored.
+- [ ] Accessibility audit: axe-clean on all routes; keyboard-only voting flow; prefers-reduced-motion disables bar animations.
+- [ ] Cross-check envelope/error handling on every route (404 poll, network offline, 403 moderation).
+
+## Task 6 — Production Docker Orchestration & Build Verification
+
+- [ ] `docker/Dockerfile.frontend`: multi-stage (pnpm build -> nginx static), nginx proxying `/api` -> backend:8102.
+- [ ] `docker/Dockerfile.backend`: multi-stage python:slim, gunicorn + whitegunicorn/static, migrate-on-start entrypoint.
+- [ ] `docker-compose.yml`: services `frontend` (5102), `backend` (8102), postgres 5402 (Neon in prod — compose postgres only for local parity), healthchecks, depends_on conditions.
+- [ ] Environment config: `.env.example` with DATABASE_URL, SECRET_KEY, VOTE_HASH_SALT, CORS_ORIGINS, DEBUG=false defaults.
+- [ ] Full verification: `turbo build` clean; `docker compose up` serves FE on 5102, BE on 8102; seeded poll visible; vote casts; tally chart updates; moderation close works end-to-end.
+- [ ] Security checklist final pass: headers present, CORS locked, DEBUG off, no stack traces, IP hashing active.
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@community/shared": ["packages/shared/src"],
+      "@community/shared/*": ["packages/shared/src/*"]
+    }
+  }
+}
+</file>
+
+<file path="turbo.json">
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+    "test": {
+      "dependsOn": ["^test"]
+    }
+  }
+}
+</file>
+
+</files>

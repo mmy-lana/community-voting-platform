@@ -1,13 +1,19 @@
 {
   "name": "community-voting-platform",
   "private": true,
+  "packageManager": "pnpm@11.22.0",
   "scripts": {
-    "build": "turbo build",
+    "predev": "docker compose -f docker/docker-compose.yml up -d --wait",
     "dev": "turbo dev",
+    "build": "turbo build",
     "lint": "turbo lint",
-    "test": "turbo test"
+    "test": "turbo test",
+    "db:init": "cd backend && ../.venv/bin/python manage.py migrate",
+    "db:migrate": "cd backend && ../.venv/bin/python manage.py migrate",
+    "db:seed": "cd backend && ../.venv/bin/python manage.py seed_polls"
   },
   "devDependencies": {
+    "playwright-core": "^1.64.0",
     "turbo": "latest"
   }
 }

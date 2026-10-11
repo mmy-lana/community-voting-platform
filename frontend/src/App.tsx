@@ -1,5 +1,5 @@
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { apiClient } from './lib/apiClient';
 import { RouterProvider, useRouter } from './app/router';
 
 const queryClient = new QueryClient({
@@ -11,6 +11,21 @@ const queryClient = new QueryClient({
   },
 });
 
+function HealthCheck() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['health'],
+    queryFn: () => apiClient.get<{ status: string; service: string }>('/polls/health/'),
+  });
+
+  if (isLoading) return <p className="text-sm text-gray-500">Checking API health…</p>;
+  if (isError) return <p className="text-sm text-red-600">API health check failed.</p>;
+  return (
+    <p className="text-sm font-medium text-emerald-700" data-testid="api-health">
+      API healthy: {data?.service} ({data?.status})
+    </p>
+  );
+}
+
 function RouteView() {
   const { path, navigate } = useRouter();
 
@@ -20,7 +35,7 @@ function RouteView() {
         <h2 className="text-2xl font-bold">Open Community Polls</h2>
         <p className="text-gray-600">Select a poll to cast your vote or view current tallies.</p>
         <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
-          <p className="text-sm font-medium text-gray-500">Poll listing shell initialized.</p>
+          <HealthCheck />
         </div>
       </section>
     );
@@ -84,8 +99,8 @@ export function App() {
             <div className="max-w-6xl mx-auto flex items-center justify-between">
               <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
               <nav className="flex space-x-4">
-                <a href="/" className="text-sm font-medium hover:text-accent p-2">Polls</a>
-                <a href="/moderation" className="text-sm font-medium hover:text-accent p-2">Moderation</a>
+                <a href="/" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
+                <a href="/moderation" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
               </nav>
             </div>
           </header>

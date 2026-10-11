@@ -4,14 +4,14 @@ Checklist — Tasks 1–6, executed in order. Each task must be verified before 
 
 ## Task 1 — Environment Baseline, Shared Contracts & DB Init
 
-- [ ] Scaffold Turborepo root with pnpm workspaces (`frontend`, `backend`, `packages/shared`, `docker`), `turbo.json` pipelines for build/dev/lint/test.
-- [ ] Initialize frontend: latest Vite + React + TypeScript (strict), Tailwind v4, port 5102 dev server.
-- [ ] Initialize backend: latest Django project `config`, DRF installed, pip `requirements.txt`, port 8102.
-- [ ] Configure Neon Postgres connection via `DATABASE_URL` (psycopg2, sslmode=require); verify connectivity on port 5402 tunnel.
-- [ ] Create `packages/shared` TypeScript DTOs + enums (PollDTO, OptionDTO, VoteDTO, ResultDTO, ApiResponseEnvelope<T>, PollStatus, ErrorCodes) consumed by frontend; mirrored by DRF serializer field naming.
-- [ ] Implement `apps/core`: EnvelopeRenderer, EnvelopeExceptionHandler, pagination, `X-Request-Id` middleware.
-- [ ] `db:init` + `db:migrate` management commands run clean against empty DB; `db:seed` seeds fixture polls/options (see specs/01-core.md seed requirements).
-- [ ] CORS allowlist set to `http://localhost:5102`; smoke test: FE fetches `/api/v1/polls/health` and renders envelope.
+- [x] Scaffold Turborepo root with pnpm workspaces (`frontend`, `backend`, `packages/shared`, `docker`), `turbo.json` pipelines for build/dev/lint/test.
+- [x] Initialize frontend: latest Vite + React + TypeScript (strict), Tailwind v4, port 5102 dev server.
+- [x] Initialize backend: latest Django project `config`, DRF installed, pip `requirements.txt`, port 8102.
+- [x] Configure Neon Postgres connection via `DATABASE_URL` (psycopg2, sslmode=require); verify connectivity on port 5402 tunnel.
+- [x] Create `packages/shared` TypeScript DTOs + enums (PollDTO, OptionDTO, VoteDTO, ResultDTO, ApiResponseEnvelope<T>, PollStatus, ErrorCodes) consumed by frontend; mirrored by DRF serializer field naming.
+- [x] Implement `apps/core`: EnvelopeRenderer, EnvelopeExceptionHandler, pagination, `X-Request-Id` middleware.
+- [x] `db:init` + `db:migrate` management commands run clean against empty DB; `db:seed` seeds fixture polls/options (see specs/01-core.md seed requirements).
+- [x] CORS allowlist set to `http://localhost:5102`; smoke test: FE fetches `/api/v1/polls/health` and renders envelope.
 
 ## Task 2 — Design System Primitives & Atomic UI
 

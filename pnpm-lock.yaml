@@ -8,9 +8,14 @@ importers:
 
   .:
     devDependencies:
+      playwright-core:
+        specifier: ^1.64.0
+        version: 1.64.0
       turbo:
         specifier: latest
         version: 2.11.7
+
+  backend: {}
 
   frontend:
     dependencies:
@@ -659,6 +664,11 @@ packages:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==, tarball: https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz}
     engines: {node: '>=12'}
 
+  playwright-core@1.64.0:
+    resolution: {integrity: sha512-T9r+MZkTECl2+oUcZ26YgZzTrYidTsIhYYkJix+6iDOymOb1FB2RLLSOxRGnZGv5DStt+aduIVbt+E8WygXYpg==, tarball: https://registry.npmjs.org/playwright-core/-/playwright-core-1.64.0.tgz}
+    engines: {node: '>=20'}
+    hasBin: true
+
   postcss@8.5.29:
     resolution: {integrity: sha512-49cGhUbXj8Qenv0iTMxA1cFBzxXoctpC9Ujd77t1WcbJIr6nF/eI7g/8MgxrYldFRuAXvja7xQRwavoW7kgrxQ==, tarball: https://registry.npmjs.org/postcss/-/postcss-8.5.29.tgz}
     engines: {node: ^10 || ^12 || >=14}
@@ -1136,6 +1146,8 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
+
+  playwright-core@1.64.0: {}
 
   postcss@8.5.29:
     dependencies:

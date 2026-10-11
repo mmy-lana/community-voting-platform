@@ -2,3 +2,7 @@ packages:
   - "frontend"
   - "backend"
   - "packages/*"
+  - "docker"
+
+storeDir: .pnpm-store
+verifyDepsBeforeRun: false
