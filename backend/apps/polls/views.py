@@ -169,7 +169,9 @@ class PollViewSet(viewsets.ModelViewSet):
             "id": vote.id,
             "pollId": vote.poll_id,
             "optionId": vote.option_id,
-            "createdAt": vote.created_at,
+            # ISO string up front so the cached payload serializes identically
+            # to the fresh-response path (no datetime drift on replay).
+            "createdAt": vote.created_at.isoformat(),
         }
         if cache_key is not None:
             cache.set(cache_key, data, timeout=600)

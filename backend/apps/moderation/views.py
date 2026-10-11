@@ -312,19 +312,15 @@ class ModerationBulkStatusView(APIView):
                         reason=reason,
                     )
         except Exception as exc:
-            # Primary transaction rolled back; write the abort audit entry on a
-            # separate connection/transaction so the failure is always recorded.
-            transaction.atomic(using="default").__enter__()
-            try:
-                AuditLog.objects.create(
-                    actor=_actor_name(request),
-                    action="poll.bulk_status.failed",
-                    entity_type="poll",
-                    entity_id=0,
-                    reason=f"Aborted: {exc}",
-                )
-            finally:
-                transaction.atomic(using="default").__exit__(None, None, None)
+            # The atomic block above has fully rolled back; record the abort on
+            # the now-clean connection with a standalone autocommit query.
+            AuditLog.objects.create(
+                actor=_actor_name(request),
+                action="poll.bulk_status.failed",
+                entity_type="poll",
+                entity_id=0,
+                reason=f"Aborted: {exc}",
+            )
             raise _APIError(
                 "INTERNAL_ERROR",
                 "Bulk status update aborted; no polls were changed.",

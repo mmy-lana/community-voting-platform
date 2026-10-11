@@ -5,6 +5,7 @@ import { Badge, Button, EmptyState, Modal, Skeleton } from '../../components';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { useToast } from '../../components/Toast';
 import { useAppStore } from '../../lib/store';
+import { useRouter } from '../../app/router';
 import { listPolls } from '../polls/api';
 import {
   StaffApiError,
@@ -498,6 +499,7 @@ function StaffAccessGate() {
 
 export function ModerationPage() {
   const handleError = useStaffErrorHandler();
+  const { navigate } = useRouter();
   const staffToken = useAppStore((s) => s.staffToken);
   const staffSessionMode = useAppStore((s) => s.staffSessionMode);
   const hasEnvToken = Boolean(import.meta.env.VITE_STAFF_API_TOKEN);
@@ -530,14 +532,32 @@ export function ModerationPage() {
     return (
       <EmptyState
         title="Staff required"
-        description="This console is restricted to staff. Authenticate with a valid staff bearer token and reload."
+        description="This console is restricted to staff. Re-authenticate with a valid staff bearer token or continue with a staff session."
+        action={
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                useAppStore.getState().setStaffToken(null);
+                useAppStore.getState().setStaffSessionMode(false);
+                void accessQuery.refetch();
+              }}
+            >
+              Change credentials / Re-authenticate
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/')}>← Back to polls</Button>
+          </div>
+        }
       />
     );
   }
 
   return (
     <section className="space-y-6">
-      <h2 className="text-2xl font-bold">Staff Moderation Console</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-2xl font-bold">Staff Moderation Console</h2>
+        <Button variant="ghost" onClick={() => navigate('/')}>← Back to polls</Button>
+      </div>
       <ErrorBoundary onRetry={() => void accessQuery.refetch()}>
         <StatsCards />
       </ErrorBoundary>

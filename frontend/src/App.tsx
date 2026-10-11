@@ -86,22 +86,47 @@ function RouteView() {
   return <NotFoundPage />;
 }
 
+function SiteHeader() {
+  const { navigate } = useRouter();
+
+  const linkProps = (path: string) => ({
+    href: path,
+    onClick: (e: { preventDefault: () => void }) => {
+      e.preventDefault();
+      navigate(path);
+    },
+  });
+
+  return (
+    <header className="border-b border-border bg-white px-4 py-4 md:px-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-4">
+      <div className="mx-auto flex flex-wrap items-center justify-between gap-2 max-w-[1200px]">
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/');
+          }}
+          className="text-xl font-bold tracking-tight hover:text-accent p-3 min-h-[44px] inline-flex items-center"
+        >
+          Community Voting Platform
+        </a>
+        <nav aria-label="Primary" className="flex space-x-2 md:space-x-4">
+          <a {...linkProps('/')} className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
+          <a {...linkProps('/components')} className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
+          <a {...linkProps('/moderation')} className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <RouterProvider>
           <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-            <header className="border-b border-border bg-white px-4 py-4 md:px-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-4">
-              <div className="mx-auto flex flex-wrap items-center justify-between gap-2 max-w-[1200px]">
-                <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
-                <nav aria-label="Primary" className="flex space-x-2 md:space-x-4">
-                  <a href="/" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
-                  <a href="/components" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
-                  <a href="/moderation" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
-                </nav>
-              </div>
-            </header>
+            <SiteHeader />
             <main className="flex-1 w-full mx-auto max-w-[1200px] px-4 py-6 md:px-6 md:py-8">
               {/* Route-level boundary catches render errors inside any lazy chunk. */}
               <ErrorBoundary>

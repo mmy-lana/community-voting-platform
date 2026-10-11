@@ -11,13 +11,24 @@ function resolveStaffToken(): string {
   return import.meta.env.VITE_STAFF_API_TOKEN || useAppStore.getState().staffToken || '';
 }
 
+/** Parses the Django CSRF cookie, if present. */
+function getCsrfToken(): string {
+  const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 /** Builds Authorization headers only when a token exists; falls back to session credentials. */
-function staffHeaders(extra: Record<string, string> = {}): RequestInit {
+function staffHeaders(method = 'GET', extra: Record<string, string> = {}): RequestInit {
   const token = resolveStaffToken();
+  const needsCsrf = !token && MUTATING_METHODS.has(method.toUpperCase());
   return {
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Session-authenticated mutations must present the CSRF token to DRF.
+      ...(needsCsrf && getCsrfToken() ? { 'X-CSRFToken': getCsrfToken() } : {}),
       ...extra,
     },
     credentials: 'include',
@@ -56,7 +67,7 @@ export class StaffApiError extends Error {
 }
 
 async function staffRequest<T>(path: string, init: RequestInit = {}): Promise<{ data: T; meta: { pagination?: PaginatedList<unknown>['pagination'] } | null }> {
-  const auth = staffHeaders();
+  const auth = staffHeaders(init.method ?? 'GET');
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
     ...auth,
@@ -177,7 +188,7 @@ export async function exportVotesCsv(filters: VoteListFilters = {}): Promise<voi
   if (filters.to) params.set('to', filters.to);
   const qs = params.toString();
   const response = await fetch(`${BASE_URL}/moderation/votes/export/${qs ? `?${qs}` : ''}`, {
-    ...staffHeaders(),
+    ...staffHeaders('GET'),
   });
   if (!response.ok) {
     throw new StaffApiError(response.status, 'EXPORT_FAILED', `Export failed with status ${response.status}`);

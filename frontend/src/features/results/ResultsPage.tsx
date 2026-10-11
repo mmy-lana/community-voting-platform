@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { focusManager, useQuery } from '@tanstack/react-query';
 import type { ResultDTO, TimeSeriesResponseDTO } from '@community/shared';
-import { BarChart, Badge, EmptyState, Skeleton } from '../../components';
+import { BarChart, Badge, Button, EmptyState, Skeleton } from '../../components';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { ApiError } from '../../lib/apiClient';
+import { useRouter } from '../../app/router';
 import { getLiveResults, getTimeSeries, type Granularity } from './api';
 import { adaptiveIntervalMs, backoffIntervalMs, resultSignature } from './interval';
 import { zeroFillTimeSeries } from './timeseries';
 import { Sparkline } from './Sparkline';
 
 export function ResultsPage({ pollId }: { pollId: number }) {
+  const { navigate } = useRouter();
   const [granularity, setGranularity] = useState<Granularity>('hourly');
 
   // Adaptive polling bookkeeping: steps 2s -> 5s -> 10s -> 30s while responses
@@ -115,6 +117,18 @@ export function ResultsPage({ pollId }: { pollId: number }) {
 
   return (
     <section className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="ghost" onClick={() => navigate('/')}>← All polls</Button>
+        <Button variant="ghost" onClick={() => navigate(`/polls/${results.pollId}`)}>
+          ← Poll detail
+        </Button>
+      </div>
+      <nav aria-label="Breadcrumb" className="text-body-sm text-slate-500">
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }} className="inline-flex min-h-[44px] min-w-[44px] items-center p-2 hover:underline">Home</a>
+        {' / '}
+        <a href={`/polls/${results.pollId}`} onClick={(e) => { e.preventDefault(); navigate(`/polls/${results.pollId}`); }} className="inline-flex min-h-[44px] min-w-[44px] items-center p-2 hover:underline">Polls</a>
+        {` / Poll #${results.pollId}`}
+      </nav>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold">Results for Poll #{results.pollId}</h2>

@@ -198,6 +198,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # --- Domain salts ---
+TRUSTED_PROXIES = env("TRUSTED_PROXIES", "")  # comma-separated CIDRs, e.g. 172.16.0.0/12
 VOTE_HASH_SALT = env("VOTE_HASH_SALT", "dev_pepper_salt_for_voter_ip_hashing")
 SEED_VOTE_SALT = env("SEED_VOTE_SALT", "dev_deterministic_seed_salt_for_fixtures")
 _raw_staff_token = os.environ.get("STAFF_API_TOKEN", "").strip()

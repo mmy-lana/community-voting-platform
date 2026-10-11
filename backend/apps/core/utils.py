@@ -34,10 +34,22 @@ def seed_ip_hash(index: int, poll_key: str = "seed") -> str:
     return hashlib.sha256(f"198.51.100.{index % 254 + 1}{salt}{raw}".encode("utf-8")).hexdigest()
 
 
-TRUSTED_PROXY_NETWORKS = [
-    ipaddress.ip_network(net)
-    for net in ("127.0.0.0/8", "::1/128", "172.16.0.0/12", "10.0.0.0/8", "192.168.0.0/16")
-]
+def _trusted_proxy_networks():
+    """Loopback by default; extra proxies come from settings/env TRUSTED_PROXIES."""
+    networks = [ipaddress.ip_network("127.0.0.0/8"), ipaddress.ip_network("::1/128")]
+    raw = getattr(settings, "TRUSTED_PROXIES", None)
+    if raw is None:
+        import os
+
+        raw = os.environ.get("TRUSTED_PROXIES", "")
+    if isinstance(raw, str):
+        raw = [part.strip() for part in raw.split(",") if part.strip()]
+    for cidr in raw or []:
+        try:
+            networks.append(ipaddress.ip_network(cidr))
+        except ValueError:
+            continue
+    return networks
 
 
 def _is_trusted_proxy(ip_str: str) -> bool:
@@ -45,7 +57,7 @@ def _is_trusted_proxy(ip_str: str) -> bool:
         ip = ipaddress.ip_address(ip_str.strip())
     except ValueError:
         return False
-    return any(ip in net for net in TRUSTED_PROXY_NETWORKS)
+    return any(ip in net for net in _trusted_proxy_networks())
 
 
 def client_ip(request) -> str:

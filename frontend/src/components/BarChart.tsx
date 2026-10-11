@@ -55,9 +55,9 @@ export function BarChart({
               <div className="flex-1">
                 <div
                   className={[
-                    'h-[--chart-bar-h] rounded-[--radius-control]',
+                    'h-[var(--chart-bar-h)] rounded-[--radius-control]',
                     barColors[index % barColors.length],
-                    highlighted ? 'ring-2 ring-ink ring-offset-1' : '',
+                    highlighted ? 'ring-2 ring-voted' : '',
                     animate ? 'motion-safe:transition-[width] motion-safe:duration-300' : '',
                   ]
                     .filter(Boolean)

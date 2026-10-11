@@ -96,6 +96,11 @@ class Vote(models.Model):
             models.UniqueConstraint(
                 fields=["poll", "voter_ip"], name="uniq_vote_per_poll_voter"
             ),
+            models.UniqueConstraint(
+                fields=["poll", "idempotency_key"],
+                condition=models.Q(idempotency_key__isnull=False),
+                name="uniq_vote_idempotency",
+            ),
         ]
         indexes = [
             models.Index(fields=["poll", "option"], name="idx_votes_poll_option"),
