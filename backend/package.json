@@ -1,0 +1,11 @@
+{
+  "name": "backend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "python manage.py runserver 0.0.0.0:8102",
+    "build": "python -m compileall .",
+    "lint": "python -m pyflakes apps/ config/",
+    "test": "python manage.py test apps"
+  }
+}
