@@ -193,3 +193,136 @@ class ModerationVoteExportView(APIView):
                 ]
             )
         return response
+
+
+class ModerationStatusView(APIView):
+    """POST /moderation/polls/{id}/status/ — transition poll status -> 200 PollDetailDTO."""
+
+    permission_classes = [IsStaffOrBearerToken]
+
+    def post(self, request, pk=None):
+        from apps.core.rendering import APIError as _APIError
+        from apps.polls.serializers import PollDetailSerializer
+        from apps.polls.views import _annotated_queryset
+
+        target_status = (request.data or {}).get("status")
+        if target_status not in ("draft", "open", "closed"):
+            raise _APIError("VALIDATION_ERROR", "status must be draft, open or closed.", 400)
+        reason = (request.data or {}).get("reason") or None
+
+        with transaction.atomic():
+            poll = Poll.objects.filter(pk=pk).first()
+            if poll is None:
+                raise _APIError("NOT_FOUND", f"Poll {pk} not found.", 404)
+            previous = poll.status
+            poll.status = target_status
+            poll.save(update_fields=["status", "updated_at"])
+            if previous == "closed" and target_status == "open":
+                action = "poll.reopen"
+            elif target_status == "closed":
+                action = "poll.close"
+            else:
+                action = "poll.status"
+            AuditLog.objects.create(
+                actor=_actor_name(request),
+                action=action,
+                entity_type="poll",
+                entity_id=poll.pk,
+                reason=reason,
+            )
+        fresh = _annotated_queryset().get(pk=poll.pk)
+        return Response(PollDetailSerializer(fresh).data, status=200)
+
+
+class ModerationVoteDeleteView(APIView):
+    """DELETE /moderation/votes/{id}/ — delete abusive vote -> 204."""
+
+    permission_classes = [IsStaffOrBearerToken]
+
+    def delete(self, request, pk=None):
+        from apps.core.rendering import APIError as _APIError
+
+        with transaction.atomic():
+            vote = Vote.objects.filter(pk=pk).first()
+            if vote is None:
+                raise _APIError("NOT_FOUND", f"Vote {pk} not found.", 404)
+            vote.delete()
+            AuditLog.objects.create(
+                actor=_actor_name(request),
+                action="vote.delete",
+                entity_type="vote",
+                entity_id=pk,
+                reason=(request.data or {}).get("reason") if request.data else None,
+            )
+        return Response(status=204)
+
+
+class ModerationBulkStatusView(APIView):
+    """POST /moderation/polls/bulk-status/ — transactional bulk transition, max 50."""
+
+    permission_classes = [IsStaffOrBearerToken]
+
+    def post(self, request):
+        from apps.core.rendering import APIError as _APIError
+
+        payload = request.data or {}
+        # camel-case parser delivers pollIds as poll_ids; accept both.
+        poll_ids = payload.get("pollIds", payload.get("poll_ids"))
+        target_status = payload.get("status")
+        reason = payload.get("reason") or None
+        if not isinstance(poll_ids, list) or not all(
+            isinstance(i, int) and not isinstance(i, bool) for i in poll_ids
+        ):
+            raise _APIError("VALIDATION_ERROR", "pollIds must be a list of integers.", 400)
+        if len(poll_ids) > 50:
+            raise _APIError("VALIDATION_ERROR", "Bulk status update is capped at 50 polls.", 400)
+        if target_status not in ("draft", "open", "closed"):
+            raise _APIError("VALIDATION_ERROR", "status must be draft, open or closed.", 400)
+
+        updated = 0
+        skipped = []
+        with transaction.atomic():
+            for poll_id in poll_ids:
+                poll = Poll.objects.filter(pk=poll_id).first()
+                if poll is None:
+                    skipped.append({"id": poll_id, "reason": "NOT_FOUND"})
+                    continue
+                if poll.status == target_status:
+                    skipped.append({"id": poll_id, "reason": "ALREADY_IN_STATUS"})
+                    continue
+                poll.status = target_status
+                poll.save(update_fields=["status", "updated_at"])
+                updated += 1
+            if updated:
+                AuditLog.objects.create(
+                    actor=_actor_name(request),
+                    action="poll.bulk_status",
+                    entity_type="poll",
+                    entity_id=0,
+                    reason=reason,
+                )
+        return Response({"updated": updated, "skipped": skipped}, status=200)
+
+
+class ModerationStatsView(APIView):
+    """GET /moderation/stats/ — system metrics as Record<string, number>."""
+
+    permission_classes = [IsStaffOrBearerToken]
+
+    def get(self, request):
+        from django.db.models import Count
+        from django.utils import timezone
+        from datetime import timedelta
+
+        now = timezone.now()
+        polls_by_status = dict(Poll.objects.values_list("status").annotate(c=Count("id")))
+        stats = {
+            "pollsTotal": Poll.objects.count(),
+            "pollsOpen": polls_by_status.get("open", 0),
+            "pollsClosed": polls_by_status.get("closed", 0),
+            "pollsDraft": polls_by_status.get("draft", 0),
+            "votesTotal": Vote.objects.count(),
+            "votesLast24h": Vote.objects.filter(created_at__gte=now - timedelta(hours=24)).count(),
+            "auditEntries": AuditLog.objects.count(),
+        }
+        return Response(stats, status=200)

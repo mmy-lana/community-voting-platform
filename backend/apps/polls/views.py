@@ -56,11 +56,13 @@ class PollViewSet(viewsets.ModelViewSet):
         is_staff = is_staff_request(self.request)
         requested_status = self.request.query_params.get("status")
         if requested_status:
-            if not is_staff and requested_status != "open":
-                raise APIError("PERMISSION_DENIED", "Only open polls are public.", 403)
+            # Drafts are never public; open/closed listings are readable
+            # anonymously (frontend status filter tabs rely on this).
+            if not is_staff and requested_status not in ("open", "closed"):
+                raise APIError("PERMISSION_DENIED", "Draft polls are not public.", 403)
             qs = qs.filter(status=requested_status)
         elif not is_staff:
-            qs = qs.filter(status="open")
+            qs = qs.exclude(status="draft")
         search = self.request.query_params.get("search")
         if search:
             qs = qs.filter(title__icontains=search)

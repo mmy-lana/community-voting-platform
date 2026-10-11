@@ -23,13 +23,13 @@ Checklist — Tasks 1–6, executed in order. Each task must be verified before 
 
 ## Task 3 — Feature Module 1: Polls & Vote Casting (End-to-End)
 
-- [ ] Backend: `Poll`, `PollOption`, `Vote` models with DDL per specs/01-core.md (unique `(poll_id, voter_ip)`, status enum, FKs, indexes).
-- [ ] DRF serializers (PollListSerializer, PollDetailSerializer, VoteCreateSerializer, nested options) + viewsets per specs/03-polls-and-voting.md.
-- [ ] Vote casting transaction: `SELECT ... FOR UPDATE` poll row, status/expiry checks, insert with unique-constraint catch, `Idempotency-Key` cache, IP hash normalization.
-- [ ] Frontend poll list page (grid of VoteCards, filter by status), poll detail page with vote interaction, optimistic update + rollback on 409.
-- [ ] State transitions draft->open->closed enforced server-side; draft polls invisible to anonymous list/detail.
-- [ ] Edge cases handled + tested: double vote, expired poll, closed poll, malformed IP, concurrent same-IP requests (race via concurrent test).
-- [ ] E2E happy path: load -> vote -> see updated tally bar chart.
+- [x] Backend: `Poll`, `PollOption`, `Vote` models with DDL per specs/01-core.md (unique `(poll_id, voter_ip)`, status enum, FKs, indexes).
+- [x] DRF serializers (PollListSerializer, PollDetailSerializer, VoteCreateSerializer, nested options) + viewsets per specs/03-polls-and-voting.md.
+- [x] Vote casting transaction: `SELECT ... FOR UPDATE` poll row, status/expiry checks, insert with unique-constraint catch, `Idempotency-Key` cache, IP hash normalization.
+- [x] Frontend poll list page (grid of VoteCards, filter by status), poll detail page with vote interaction, optimistic update + rollback on 409.
+- [x] State transitions draft->open->closed enforced server-side; draft polls invisible to anonymous list/detail.
+- [x] Edge cases handled + tested: double vote, expired poll, closed poll, malformed IP, concurrent same-IP requests (race via concurrent test).
+- [x] E2E happy path: load -> vote -> see updated tally bar chart.
 
 ## Task 4 — Feature Module 2: Results, Analytics & Moderation (End-to-End)
 

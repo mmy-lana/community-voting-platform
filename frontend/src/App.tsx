@@ -1,6 +1,9 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { apiClient } from './lib/apiClient';
 import { RouterProvider, useRouter } from './app/router';
+import { ToastProvider } from './components/Toast';
+import { PollListPage } from './features/polls/PollListPage';
+import { PollDetailPage } from './features/polls/PollDetailPage';
 import { ComponentShowcasePage } from './features/components/ComponentShowcasePage';
 
 const queryClient = new QueryClient({
@@ -32,14 +35,18 @@ function RouteView() {
 
   if (path === '/') {
     return (
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold">Open Community Polls</h2>
-        <p className="text-gray-600">Select a poll to cast your vote or view current tallies.</p>
-        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
+      <div className="space-y-6">
+        <div className="p-4 border border-border rounded-xl bg-white shadow-sm">
           <HealthCheck />
         </div>
-      </section>
+        <PollListPage />
+      </div>
     );
+  }
+
+  const pollDetailMatch = path.match(/^\/polls\/(\d+)\/?$/);
+  if (pollDetailMatch) {
+    return <PollDetailPage pollId={Number(pollDetailMatch[1])} />;
   }
 
   if (path.startsWith('/polls/') && path.endsWith('/results')) {
@@ -49,18 +56,6 @@ function RouteView() {
         <h2 className="text-2xl font-bold">Results for Poll #{pollId}</h2>
         <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
           <p className="text-sm font-medium text-gray-500">Live tally bar charts view shell.</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (path.startsWith('/polls/')) {
-    const pollId = path.split('/')[2];
-    return (
-      <section className="space-y-4">
-        <h2 className="text-2xl font-bold">Cast Vote - Poll #{pollId}</h2>
-        <div className="p-6 border border-border rounded-xl bg-white shadow-sm">
-          <p className="text-sm font-medium text-gray-500">VoteCard component shell.</p>
         </div>
       </section>
     );
@@ -98,26 +93,28 @@ function RouteView() {
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider>
-        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-          <header className="border-b border-border bg-white px-6 py-4">
-            <div className="max-w-6xl mx-auto flex items-center justify-between">
-              <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
-              <nav className="flex space-x-4">
-                <a href="/" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
-                <a href="/components" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
-                <a href="/moderation" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
-              </nav>
-            </div>
-          </header>
-          <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
-            <RouteView />
-          </main>
-          <footer className="border-t border-border bg-white px-6 py-4 text-center text-xs text-gray-500">
-            High-contrast voting platform shell. Port 5102.
-          </footer>
-        </div>
-      </RouterProvider>
+      <ToastProvider>
+        <RouterProvider>
+          <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+            <header className="border-b border-border bg-white px-6 py-4">
+              <div className="max-w-6xl mx-auto flex items-center justify-between">
+                <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
+                <nav className="flex space-x-4">
+                  <a href="/" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
+                  <a href="/components" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
+                  <a href="/moderation" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
+                </nav>
+              </div>
+            </header>
+            <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+              <RouteView />
+            </main>
+            <footer className="border-t border-border bg-white px-6 py-4 text-center text-xs text-gray-500">
+              High-contrast voting platform shell. Port 5102.
+            </footer>
+          </div>
+        </RouterProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

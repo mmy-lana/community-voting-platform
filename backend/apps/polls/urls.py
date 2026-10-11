@@ -12,6 +12,12 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("polls/health/", health, name="polls-health"),
     path("", include(router.urls)),
+    # Spec alias: POST /polls/{id}/votes/ (router exposes /polls/{id}/vote/).
+    path(
+        "polls/<int:pk>/votes/",
+        PollViewSet.as_view({"post": "vote"}),
+        name="poll-votes",
+    ),
     path(
         "polls/<int:pk>/results/timeseries/",
         TimeSeriesView.as_view(),
