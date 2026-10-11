@@ -1,0 +1,47 @@
+# Multi-stage build for the Django backend.
+# Build context MUST be the repo root (see docker/docker-compose.yml):
+#   docker compose -p cvp -f docker/docker-compose.yml build backend
+FROM python:3.12-slim AS deps
+
+WORKDIR /app
+
+ENV PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+COPY backend/requirements.txt /app/backend/requirements.txt
+RUN pip install --no-cache-dir -r /app/backend/requirements.txt gunicorn whitenoise
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=config.settings \
+    DJANGO_STATIC_ROOT=/app/staticfiles
+
+# Non-root user for runtime
+RUN useradd --create-home --uid 1000 appuser
+
+COPY --from=deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=deps /usr/local/bin /usr/local/bin
+
+COPY backend/ /app/backend/
+COPY docker/backend-entrypoint.sh /app/backend-entrypoint.sh
+RUN chmod 755 /app/backend-entrypoint.sh /app/backend/manage.py \
+    && chmod -R a+rX /app/backend
+
+WORKDIR /app/backend
+
+# Collect static files at build time (dummy envs; no DB access needed)
+RUN SECRET_KEY=collectstatic-build-secret \
+    DATABASE_URL="" \
+    DEBUG=false \
+    ALLOWED_HOSTS=localhost \
+    python manage.py collectstatic --noinput
+
+USER appuser
+
+EXPOSE 8102
+
+ENTRYPOINT ["/app/backend-entrypoint.sh"]

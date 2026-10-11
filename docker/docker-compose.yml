@@ -1,7 +1,18 @@
+# Community Voting Platform — production-style orchestration.
+#
+# IMPORTANT: never run plain `docker compose -f docker/docker-compose.yml ...`
+# without the project name: the default project name "docker" collides with an
+# unrelated project on this machine. ALWAYS use:
+#
+#   docker compose -p cvp -f docker/docker-compose.yml build
+#   docker compose -p cvp -f docker/docker-compose.yml up -d --wait
+#   docker compose -p cvp -f docker/docker-compose.yml down
+#
+# Build contexts are the repo root so the pnpm workspace / shared package and
+# docker/ itself are available to the Dockerfiles.
 services:
   db:
     image: postgres:16-alpine
-    container_name: cvp-postgres
     environment:
       POSTGRES_USER: voting_user
       POSTGRES_PASSWORD: voting_password
@@ -15,6 +26,43 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    environment:
+      DATABASE_URL: postgres://voting_user:voting_password@db:5432/voting_db
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-a-secure-random-secret-key-in-production}
+      VOTE_HASH_SALT: ${VOTE_HASH_SALT:-dev_pepper_salt_for_voter_ip_hashing}
+      SEED_VOTE_SALT: ${SEED_VOTE_SALT:-dev_deterministic_seed_salt_for_fixtures}
+      DEBUG: "false"
+      CORS_ORIGINS: http://localhost:5102,http://127.0.0.1:5102
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      STAFF_API_TOKEN: ${STAFF_API_TOKEN:-dev-staff-token}
+    ports:
+      - "8102:8102"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8102/api/v1/polls/health/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "5102:5102"
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
   cvp_pgdata:

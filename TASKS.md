@@ -50,9 +50,9 @@ Checklist — Tasks 1–6, executed in order. Each task must be verified before 
 
 ## Task 6 — Production Docker Orchestration & Build Verification
 
-- [ ] `docker/Dockerfile.frontend`: multi-stage (pnpm build -> nginx static), nginx proxying `/api` -> backend:8102.
-- [ ] `docker/Dockerfile.backend`: multi-stage python:slim, gunicorn + whitegunicorn/static, migrate-on-start entrypoint.
-- [ ] `docker-compose.yml`: services `frontend` (5102), `backend` (8102), postgres 5402 (Neon in prod — compose postgres only for local parity), healthchecks, depends_on conditions.
-- [ ] Environment config: `.env.example` with DATABASE_URL, SECRET_KEY, VOTE_HASH_SALT, CORS_ORIGINS, DEBUG=false defaults.
-- [ ] Full verification: `turbo build` clean; `docker compose up` serves FE on 5102, BE on 8102; seeded poll visible; vote casts; tally chart updates; moderation close works end-to-end.
-- [ ] Security checklist final pass: headers present, CORS locked, DEBUG off, no stack traces, IP hashing active.
+- [x] `docker/Dockerfile.frontend`: multi-stage (pnpm build -> nginx static), nginx proxying `/api` -> backend:8102.
+- [x] `docker/Dockerfile.backend`: multi-stage python:slim, gunicorn + whitegunicorn/static, migrate-on-start entrypoint.
+- [x] `docker-compose.yml`: services `frontend` (5102), `backend` (8102), postgres 5402 (Neon in prod — compose postgres only for local parity), healthchecks, depends_on conditions.
+- [x] Environment config: `.env.example` with DATABASE_URL, SECRET_KEY, VOTE_HASH_SALT, CORS_ORIGINS, DEBUG=false defaults.
+- [x] Full verification: `turbo build` clean; `docker compose up` serves FE on 5102, BE on 8102; seeded poll visible; vote casts; tally chart updates; moderation close works end-to-end.
+- [x] Security checklist final pass: headers present, CORS locked, DEBUG off, no stack traces, IP hashing active.
