@@ -87,13 +87,19 @@ function RouteView() {
 }
 
 function SiteHeader() {
-  const { navigate } = useRouter();
+  const { path, navigate } = useRouter();
 
-  const linkProps = (path: string) => ({
-    href: path,
+  const linkProps = (target: string) => ({
+    href: target,
+    'aria-current': path === target ? ('page' as const) : undefined,
+    className: `text-sm p-3 min-h-[44px] min-w-[44px] inline-flex items-center border-b-2 ${
+      path === target
+        ? 'text-accent font-semibold border-accent'
+        : 'font-medium border-transparent hover:text-accent'
+    }`,
     onClick: (e: { preventDefault: () => void }) => {
       e.preventDefault();
-      navigate(path);
+      navigate(target);
     },
   });
 
@@ -111,9 +117,9 @@ function SiteHeader() {
           Community Voting Platform
         </a>
         <nav aria-label="Primary" className="flex space-x-2 md:space-x-4">
-          <a {...linkProps('/')} className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
-          <a {...linkProps('/components')} className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
-          <a {...linkProps('/moderation')} className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
+          <a {...linkProps('/')}>Polls</a>
+          <a {...linkProps('/components')}>Components</a>
+          <a {...linkProps('/moderation')}>Moderation</a>
         </nav>
       </div>
     </header>

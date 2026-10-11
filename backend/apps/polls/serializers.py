@@ -30,14 +30,29 @@ class PollDetailSerializer(serializers.ModelSerializer):
     options = OptionSerializer(many=True, read_only=True)
     total_votes = serializers.IntegerField(read_only=True, default=0)
     lead_option_label = serializers.CharField(read_only=True, allow_null=True)
+    user_voted_option_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Poll
         fields = [
             "id", "title", "description", "status", "is_anonymous", "allow_revote",
             "opens_at", "closes_at", "total_votes", "lead_option_label",
+            "user_voted_option_id",
             "options", "created_by", "created_at",
         ]
+
+    def get_user_voted_option_id(self, obj):
+        from apps.core.utils import client_ip, hash_voter_ip
+
+        request = self.context.get("request")
+        if request is None:
+            return None
+        voter_ip_hash = hash_voter_ip(client_ip(request))
+        return (
+            Vote.objects.filter(poll=obj, voter_ip=voter_ip_hash)
+            .values_list("option_id", flat=True)
+            .first()
+        )
 
 
 class PollOptionWriteSerializer(serializers.ModelSerializer):

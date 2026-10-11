@@ -8,6 +8,40 @@ export interface VoteSessionEntry {
   error: string | null;
 }
 
+const VOTES_STORAGE_KEY = 'cvp:vote-session';
+
+/** Load persisted vote session entries (survives browser reloads). */
+function loadPersistedVotes(): Record<number, VoteSessionEntry> {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(VOTES_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return {};
+    const entries = Object.entries(parsed as Record<string, unknown>).filter(
+      ([key, value]) =>
+        /^\d+$/.test(key) &&
+        typeof value === 'object' &&
+        value !== null &&
+        typeof (value as VoteSessionEntry).status === 'string',
+    );
+    return Object.fromEntries(
+      entries.map(([key, value]) => [key, value as VoteSessionEntry]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+function persistVotes(votes: Record<number, VoteSessionEntry>): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(VOTES_STORAGE_KEY, JSON.stringify(votes));
+  } catch {
+    // Storage unavailable (private mode/quota) — in-memory state still works.
+  }
+}
+
 interface VoteSessionSlice {
   votes: Record<number, VoteSessionEntry>;
   setVoteStatus: (pollId: number, entry: VoteSessionEntry) => void;
@@ -30,14 +64,19 @@ interface AuthSlice {
 }
 
 export const useAppStore = create<VoteSessionSlice & UiSlice & AuthSlice>()((set) => ({
-  votes: {},
+  votes: loadPersistedVotes(),
   setVoteStatus: (pollId, entry) =>
-    set((state) => ({ votes: { ...state.votes, [pollId]: entry } })),
+    set((state) => {
+      const votes = { ...state.votes, [pollId]: entry };
+      persistVotes(votes);
+      return { votes };
+    }),
   resetVote: (pollId) =>
     set((state) => {
-      const next = { ...state.votes };
-      delete next[pollId];
-      return { votes: next };
+      const votes = { ...state.votes };
+      delete votes[pollId];
+      persistVotes(votes);
+      return { votes };
     }),
 
   modal: null,

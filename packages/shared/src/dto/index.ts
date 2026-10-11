@@ -24,6 +24,8 @@ export interface PollDetailDTO extends PollDTO {
   options: OptionDTO[];
   createdBy: string;
   createdAt: string;
+  /** Option the current voter (hashed IP) already chose on this poll, if any. */
+  userVotedOptionId: number | null;
 }
 
 export interface VoteDTO {

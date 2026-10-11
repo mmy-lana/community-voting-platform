@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PollDetailDTO } from '@community/shared';
 import { VoteCard } from '../../components/VoteCard';
@@ -25,9 +25,16 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
 
   const [alreadyVoted, setAlreadyVoted] = useState(false);
 
+  // Duplicate-warning banner is component-local state; never leak across polls.
+  useEffect(() => {
+    setAlreadyVoted(false);
+  }, [pollId]);
+
   const poll = pollQuery.data;
   const closed = poll !== undefined && (poll.status !== 'open' || isExpired(poll));
-  const hasVoted = voteEntry.status === 'success';
+  const hasVoted =
+    voteEntry.status === 'success' || Boolean(poll?.userVotedOptionId) || alreadyVoted;
+  const activeOptionId = voteEntry.optionId ?? poll?.userVotedOptionId ?? null;
 
   const submitVote = async (optionId: number) => {
     setAlreadyVoted(false);
@@ -78,7 +85,7 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
       </Button>
       <VoteCard
         poll={poll}
-        selectedOptionId={voteEntry.optionId}
+        selectedOptionId={activeOptionId}
         hasVoted={hasVoted}
         onOptionSelect={select}
         onSubmitVote={(optionId) => {

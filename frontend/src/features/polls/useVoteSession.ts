@@ -51,7 +51,9 @@ export function useVoteSession(pollId: number) {
         await callbacks.onSuccess?.();
       } catch (err) {
         if (isDuplicateVoteError(err)) {
-          setVoteStatus(pollId, { optionId: null, status: 'error', error: null });
+          // Keep the attempted optionId: the vote exists server-side, so the
+          // chosen option stays highlighted and the card locks as voted.
+          setVoteStatus(pollId, { optionId, status: 'success', error: null });
           callbacks.onDuplicate?.();
         } else {
           setVoteStatus(pollId, {

@@ -26,6 +26,13 @@ class AuditLogPagination(EnvelopePagination):
     max_page_size = 50
 
 
+def _sanitize_csv_value(value):
+    """Prevent CSV formula injection: prefix leading =, +, -, @ with a quote."""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@"):
+        return f"'{value}"
+    return value
+
+
 def _actor_name(request):
     user = request.user
     if user and user.is_authenticated and user.is_staff:
@@ -188,8 +195,8 @@ class ModerationVoteExportView(APIView):
                     vote.id,
                     vote.poll_id,
                     vote.option_id,
-                    vote.voter_ip,
-                    vote.idempotency_key or "",
+                    _sanitize_csv_value(vote.voter_ip),
+                    _sanitize_csv_value(vote.idempotency_key or ""),
                     vote.created_at.isoformat(),
                 ]
             )

@@ -27,6 +27,7 @@ const samplePoll: PollDetailDTO = {
   leadOptionLabel: null,
   createdBy: 'admin',
   createdAt: '2026-01-01T00:00:00Z',
+  userVotedOptionId: null,
   options: [
     { id: 11, label: 'Dark mode', position: 1, voteCount: 0 },
     { id: 12, label: 'Notifications', position: 2, voteCount: 0 },

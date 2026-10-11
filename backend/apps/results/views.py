@@ -4,6 +4,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from apps.core.rendering import APIError
+from apps.core.permissions import is_staff_request
 from apps.polls.models import Poll, Vote
 from apps.results.serializers import (
     TimeSeriesResponseSerializer,
@@ -25,6 +26,9 @@ class TimeSeriesView(APIView):
 
         poll = Poll.objects.filter(pk=pk).first()
         if poll is None:
+            raise APIError("NOT_FOUND", "Poll not found.", 404)
+        # Draft polls are invisible to non-staff, including their time series.
+        if poll.status == "draft" and not is_staff_request(request):
             raise APIError("NOT_FOUND", "Poll not found.", 404)
 
         granularity = request.query_params.get("granularity", "hourly")

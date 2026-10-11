@@ -68,7 +68,7 @@ describe('PollDetailPage', () => {
     });
   });
 
-  it('rolls back and shows the already-voted message on 409 VOTE_DUPLICATE', async () => {
+  it('locks the card as voted and keeps the selection on 409 VOTE_DUPLICATE', async () => {
     const user = userEvent.setup();
     mockedGetPoll.mockResolvedValue({ ...samplePoll, id: 1 });
     mockedCastVote.mockRejectedValue(
@@ -86,15 +86,12 @@ describe('PollDetailPage', () => {
 
     expect(await screen.findByTestId('vote-duplicate')).toHaveTextContent(/You already voted/i);
     expect(screen.getByRole('link', { name: /view results/i })).toBeInTheDocument();
-    // Rollback: no success state, card back to interactive default.
-    expect(screen.queryByTestId('vote-success')).not.toBeInTheDocument();
-    expect(screen.getByTestId('vote-card')).toHaveAttribute('data-state', 'default');
-    // Rollback cleared the optimistic selection: no radio checked.
+    // The attempted option is retained and highlighted: the card locks as voted.
+    expect(screen.getByTestId('vote-card')).toHaveAttribute('data-state', 'voted');
     expect(screen.getByRole('radio', { name: /notifications/i })).toHaveAttribute(
       'aria-checked',
-      'false',
+      'true',
     );
-    expect(screen.getByRole('button', { name: 'Cast Vote' })).toBeDisabled();
   });
 
   it('disables voting on a closed poll', async () => {

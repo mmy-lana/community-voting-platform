@@ -51,7 +51,7 @@ describe('useVoteSession', () => {
     });
   });
 
-  it('rolls back to error on 409 VOTE_DUPLICATE and calls onDuplicate (not onError)', async () => {
+  it('locks as success with the attempted option on 409 VOTE_DUPLICATE and calls onDuplicate (not onError)', async () => {
     const { result } = renderHook(() => useVoteSession(2));
     const cast = vi.fn().mockRejectedValue(duplicateError());
     const onDuplicate = vi.fn();
@@ -66,8 +66,8 @@ describe('useVoteSession', () => {
 
     expect(onDuplicate).toHaveBeenCalledTimes(1);
     expect(onError).not.toHaveBeenCalled();
-    // Optimistic selection rolled back: no option kept, status 'error'.
-    expect(result.current.entry).toEqual({ optionId: null, status: 'error', error: null });
+    // Vote exists server-side: keep the attempted option, lock as voted.
+    expect(result.current.entry).toEqual({ optionId: 12, status: 'success', error: null });
   });
 
   it('rolls back and surfaces the message on other failures via onError', async () => {

@@ -102,7 +102,7 @@ class PollViewSet(viewsets.ModelViewSet):
         from rest_framework import status as http_status
 
         poll = _annotated_queryset().get(pk=poll.pk)
-        data = PollDetailSerializer(poll).data
+        data = PollDetailSerializer(poll, context={"request": self.request}).data
         return Response(data, status=status_code if status_code else http_status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
@@ -185,6 +185,9 @@ class PollViewSet(viewsets.ModelViewSet):
 
         poll = Poll.objects.filter(pk=pk).first()
         if poll is None:
+            raise APIError("NOT_FOUND", "Poll not found.", 404)
+        # Draft polls are invisible to non-staff, including their tallies.
+        if poll.status == "draft" and not is_staff_request(request):
             raise APIError("NOT_FOUND", "Poll not found.", 404)
         return Response(build_result_dto(poll))
 
