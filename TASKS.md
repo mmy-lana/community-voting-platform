@@ -42,11 +42,11 @@ Checklist — Tasks 1–6, executed in order. Each task must be verified before 
 
 ## Task 5 — Routing Shell, Global State & Responsive Verification
 
-- [ ] Router: `/` (poll list), `/polls/:id` (detail+vote), `/polls/:id/results`, `/moderation` (staff), 404 & error routes; lazy-loaded feature chunks.
-- [ ] Global state wiring: Zustand `voteSession` hydration on navigation, TanStack Query cache invalidation after vote/close actions.
-- [ ] Full responsive pass across all routes at 360/390/430/768/1024+; modal focus trap on mobile; safe-area insets honored.
-- [ ] Accessibility audit: axe-clean on all routes; keyboard-only voting flow; prefers-reduced-motion disables bar animations.
-- [ ] Cross-check envelope/error handling on every route (404 poll, network offline, 403 moderation).
+- [x] Router: `/` (poll list), `/polls/:id` (detail+vote), `/polls/:id/results`, `/moderation` (staff), 404 & error routes; lazy-loaded feature chunks.
+- [x] Global state wiring: Zustand `voteSession` hydration on navigation, TanStack Query cache invalidation after vote/close actions.
+- [x] Full responsive pass across all routes at 360/390/430/768/1024+; modal focus trap on mobile; safe-area insets honored.
+- [x] Accessibility audit: axe-clean on all routes; keyboard-only voting flow; prefers-reduced-motion disables bar animations.
+- [x] Cross-check envelope/error handling on every route (404 poll, network offline, 403 moderation).
 
 ## Task 6 — Production Docker Orchestration & Build Verification
 

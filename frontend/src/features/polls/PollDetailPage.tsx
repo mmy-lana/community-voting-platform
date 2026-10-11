@@ -7,12 +7,10 @@ import { Skeleton } from '../../components/Skeleton';
 import { EmptyState } from '../../components/EmptyState';
 import { useToast } from '../../components/Toast';
 import { useRouter } from '../../app/router';
-import { ApiError } from '../../lib/apiClient';
-import { useAppStore, type VoteSessionEntry } from '../../lib/store';
+import { useVoteSession } from './useVoteSession';
 import { usePoll } from './hooks';
 import { castVote } from './api';
-
-const IDLE_ENTRY: VoteSessionEntry = { optionId: null, status: 'idle', error: null };
+import { ApiError } from '../../lib/apiClient';
 
 function isExpired(poll: PollDetailDTO): boolean {
   return poll.closesAt !== null && new Date(poll.closesAt).getTime() <= Date.now();
@@ -23,8 +21,7 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
   const { push } = useToast();
   const queryClient = useQueryClient();
   const pollQuery = usePoll(pollId);
-  const voteEntry = useAppStore((state) => state.votes[pollId] ?? IDLE_ENTRY);
-  const setVoteStatus = useAppStore((state) => state.setVoteStatus);
+  const { entry: voteEntry, select, submit } = useVoteSession(pollId);
 
   const [alreadyVoted, setAlreadyVoted] = useState(false);
 
@@ -34,27 +31,26 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
 
   const submitVote = async (optionId: number) => {
     setAlreadyVoted(false);
-    // Optimistic: mark selection as submitting immediately.
-    setVoteStatus(pollId, { optionId, status: 'submitting', error: null });
-    try {
-      await castVote(pollId, optionId);
-      setVoteStatus(pollId, { optionId, status: 'success', error: null });
-      await queryClient.invalidateQueries({ queryKey: ['poll', pollId] });
-    } catch (err) {
-      // Rollback optimistic state.
-      setVoteStatus(pollId, { optionId: null, status: 'error', error: null });
-      if (err instanceof ApiError) {
-        if (err.code === 'VOTE_DUPLICATE' || err.status === 409) {
-          setAlreadyVoted(true);
-        } else if (err.status === 429) {
-          push({ tone: 'error', message: 'Too many requests, slow down' });
+    await submit(optionId, castVote, {
+      onSuccess: async () => {
+        // Refresh the poll detail, the list aggregates and the live tallies.
+        await queryClient.invalidateQueries({ queryKey: ['poll', pollId] });
+        void queryClient.invalidateQueries({ queryKey: ['results', pollId] });
+        void queryClient.invalidateQueries({ queryKey: ['polls'] });
+      },
+      onDuplicate: () => setAlreadyVoted(true),
+      onError: (err) => {
+        if (err instanceof ApiError) {
+          if (err.status === 429) {
+            push({ tone: 'error', message: 'Too many requests, slow down' });
+          } else {
+            push({ tone: 'error', message: err.message || 'Vote failed. Please try again.' });
+          }
         } else {
-          push({ tone: 'error', message: err.message || 'Vote failed. Please try again.' });
+          push({ tone: 'error', message: 'Network error. Please try again.' });
         }
-      } else {
-        push({ tone: 'error', message: 'Network error. Please try again.' });
-      }
-    }
+      },
+    });
   };
 
   if (pollQuery.isLoading) {
@@ -84,9 +80,7 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
         poll={poll}
         selectedOptionId={voteEntry.optionId}
         hasVoted={hasVoted}
-        onOptionSelect={(optionId) =>
-          setVoteStatus(pollId, { optionId, status: 'idle', error: null })
-        }
+        onOptionSelect={select}
         onSubmitVote={(optionId) => {
           void submitVote(optionId);
         }}

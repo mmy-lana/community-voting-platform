@@ -1,12 +1,30 @@
+import { Suspense, lazy } from 'react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { apiClient } from './lib/apiClient';
 import { RouterProvider, useRouter } from './app/router';
 import { ToastProvider } from './components/Toast';
-import { PollListPage } from './features/polls/PollListPage';
-import { PollDetailPage } from './features/polls/PollDetailPage';
-import { ComponentShowcasePage } from './features/components/ComponentShowcasePage';
-import { ResultsPage } from './features/results/ResultsPage';
-import { ModerationPage } from './features/moderation/ModerationPage';
+import { Spinner } from './components/Spinner';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { NotFoundPage } from './app/NotFoundPage';
+
+// Feature chunks are code-split per route; the shell stays in the entry bundle.
+const PollListPage = lazy(() =>
+  import('./features/polls/PollListPage').then((m) => ({ default: m.PollListPage })),
+);
+const PollDetailPage = lazy(() =>
+  import('./features/polls/PollDetailPage').then((m) => ({ default: m.PollDetailPage })),
+);
+const ResultsPage = lazy(() =>
+  import('./features/results/ResultsPage').then((m) => ({ default: m.ResultsPage })),
+);
+const ModerationPage = lazy(() =>
+  import('./features/moderation/ModerationPage').then((m) => ({ default: m.ModerationPage })),
+);
+const ComponentShowcasePage = lazy(() =>
+  import('./features/components/ComponentShowcasePage').then((m) => ({
+    default: m.ComponentShowcasePage,
+  })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +51,18 @@ function HealthCheck() {
 }
 
 function RouteView() {
-  const { path, navigate } = useRouter();
+  const { path } = useRouter();
+
+  // `/polls/:id/results` must be matched before `/polls/:id`.
+  const resultsMatch = path.match(/^\/polls\/(\d+)\/results$/);
+  if (resultsMatch) {
+    return <ResultsPage pollId={Number(resultsMatch[1])} />;
+  }
+
+  const pollDetailMatch = path.match(/^\/polls\/(\d+)$/);
+  if (pollDetailMatch) {
+    return <PollDetailPage pollId={Number(pollDetailMatch[1])} />;
+  }
 
   if (path === '/') {
     return (
@@ -46,16 +75,6 @@ function RouteView() {
     );
   }
 
-  const pollDetailMatch = path.match(/^\/polls\/(\d+)\/?$/);
-  if (pollDetailMatch) {
-    return <PollDetailPage pollId={Number(pollDetailMatch[1])} />;
-  }
-
-  const resultsMatch = path.match(/^\/polls\/(\d+)\/results\/?$/);
-  if (resultsMatch) {
-    return <ResultsPage pollId={Number(resultsMatch[1])} />;
-  }
-
   if (path === '/components') {
     return <ComponentShowcasePage />;
   }
@@ -64,18 +83,7 @@ function RouteView() {
     return <ModerationPage />;
   }
 
-  return (
-    <section className="text-center py-12 space-y-4">
-      <h2 className="text-3xl font-bold">404 - Page Not Found</h2>
-      <p className="text-gray-600">The requested route does not exist.</p>
-      <button
-        onClick={() => navigate('/')}
-        className="px-4 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-strong transition-colors min-h-[44px] min-w-[44px]"
-      >
-        Return Home
-      </button>
-    </section>
-  );
+  return <NotFoundPage />;
 }
 
 export function App() {
@@ -84,20 +92,25 @@ export function App() {
       <ToastProvider>
         <RouterProvider>
           <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-            <header className="border-b border-border bg-white px-6 py-4">
-              <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <header className="border-b border-border bg-white px-4 py-4 md:px-6 pt-[calc(1rem+env(safe-area-inset-top))] pb-4">
+              <div className="mx-auto flex flex-wrap items-center justify-between gap-2 max-w-[1200px]">
                 <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
-                <nav className="flex space-x-4">
+                <nav aria-label="Primary" className="flex space-x-2 md:space-x-4">
                   <a href="/" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
                   <a href="/components" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
                   <a href="/moderation" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
                 </nav>
               </div>
             </header>
-            <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
-              <RouteView />
+            <main className="flex-1 w-full mx-auto max-w-[1200px] px-4 py-6 md:px-6 md:py-8">
+              {/* Route-level boundary catches render errors inside any lazy chunk. */}
+              <ErrorBoundary>
+                <Suspense fallback={<div className="flex justify-center py-12"><Spinner size={32} label="Loading…" /></div>}>
+                  <RouteView />
+                </Suspense>
+              </ErrorBoundary>
             </main>
-            <footer className="border-t border-border bg-white px-6 py-4 text-center text-xs text-gray-500">
+            <footer className="border-t border-border bg-white px-4 py-4 md:px-6 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center text-xs text-gray-500">
               High-contrast voting platform shell. Port 5102.
             </footer>
           </div>

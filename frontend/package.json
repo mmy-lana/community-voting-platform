@@ -26,6 +26,7 @@
     "@types/react-dom": "latest",
     "@types/uuid": "latest",
     "@vitejs/plugin-react": "latest",
+    "axe-core": "^4.14.0",
     "jsdom": "^30.1.2",
     "tailwindcss": "latest",
     "typescript": "latest",

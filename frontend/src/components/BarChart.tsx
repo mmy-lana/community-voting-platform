@@ -58,7 +58,7 @@ export function BarChart({
                     'h-[--chart-bar-h] rounded-[--radius-control]',
                     barColors[index % barColors.length],
                     highlighted ? 'ring-2 ring-ink ring-offset-1' : '',
-                    animate ? 'transition-[width] duration-300' : '',
+                    animate ? 'motion-safe:transition-[width] motion-safe:duration-300' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}

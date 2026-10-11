@@ -73,9 +73,14 @@ function PollControls({ onError }: { onError: (err: unknown, fallback: string) =
   const pollsQuery = useQuery({ queryKey: ['polls', {}], queryFn: () => listPolls({}) });
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
-  const invalidate = () => {
+  const invalidate = (pollId?: number) => {
     void queryClient.invalidateQueries({ queryKey: ['polls'] });
     void queryClient.invalidateQueries({ queryKey: ['moderation'] });
+    if (pollId !== undefined) {
+      // Status changes affect the detail view and the live tallies.
+      void queryClient.invalidateQueries({ queryKey: ['poll', pollId] });
+      void queryClient.invalidateQueries({ queryKey: ['results', pollId] });
+    }
   };
 
   const statusMutation = useMutation({
@@ -83,7 +88,7 @@ function PollControls({ onError }: { onError: (err: unknown, fallback: string) =
       setPollStatus(pollId, status),
     onSuccess: (_data, variables) => {
       push({ tone: 'success', message: `Poll #${variables.pollId} is now ${variables.status}.` });
-      invalidate();
+      invalidate(variables.pollId);
     },
     onError: (err) => onError(err, 'Status change failed.'),
   });
@@ -195,13 +200,17 @@ function VoteList({ onError }: { onError: (err: unknown, fallback: string) => vo
   });
 
   const deleteMutation = useMutation({
-    mutationFn: ({ voteId, auditReason }: { voteId: number; auditReason: string }) =>
+    mutationFn: ({ voteId, auditReason }: { voteId: number; pollId: number; auditReason: string }) =>
       deleteVote(voteId, auditReason),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       push({ tone: 'success', message: 'Vote deleted.' });
       setPendingDelete(null);
       setReason('');
       void queryClient.invalidateQueries({ queryKey: ['moderation'] });
+      // Tallies changed for the affected poll.
+      void queryClient.invalidateQueries({ queryKey: ['polls'] });
+      void queryClient.invalidateQueries({ queryKey: ['poll', variables.pollId] });
+      void queryClient.invalidateQueries({ queryKey: ['results', variables.pollId] });
     },
     onError: (err) => {
       onError(err, 'Vote deletion failed.');
@@ -348,7 +357,7 @@ function VoteList({ onError }: { onError: (err: unknown, fallback: string) => vo
               size="sm"
               disabled={reason.trim().length === 0 || deleteMutation.isPending}
               loading={deleteMutation.isPending}
-              onClick={() => pendingDelete && deleteMutation.mutate({ voteId: pendingDelete.id, auditReason: reason.trim() })}
+              onClick={() => pendingDelete && deleteMutation.mutate({ voteId: pendingDelete.id, pollId: pendingDelete.pollId, auditReason: reason.trim() })}
             >
               Delete vote
             </Button>
