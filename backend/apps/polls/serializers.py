@@ -79,13 +79,40 @@ class PollWriteSerializer(serializers.ModelSerializer):
     def _sync_options(self, poll, options_data):
         if options_data is None:
             return
-        poll.options.all().delete()
-        PollOption.objects.bulk_create(
-            [
-                PollOption(poll=poll, label=item["label"], position=item.get("position", 0))
-                for item in options_data
-            ]
-        )
+        # Reconcile by natural key (label): update in place, insert new,
+        # delete removed — but never cascade-delete options that have votes.
+        incoming = {}
+        for item in options_data:
+            label = item["label"].strip()
+            incoming[label] = item.get("position", 0)
+
+        existing = {opt.label: opt for opt in poll.options.all()}
+
+        to_delete = []
+        for label, option in existing.items():
+            if label in incoming:
+                position = incoming[label]
+                if option.position != position:
+                    option.position = position
+                    option.save(update_fields=["position"])
+            else:
+                to_delete.append(option)
+
+        for option in to_delete:
+            if option.votes.exists():
+                raise serializers.ValidationError(
+                    {"options": "Cannot delete options with existing votes."}
+                )
+        for option in to_delete:
+            option.delete()
+
+        new_options = [
+            PollOption(poll=poll, label=label, position=position)
+            for label, position in incoming.items()
+            if label not in existing
+        ]
+        if new_options:
+            PollOption.objects.bulk_create(new_options)
 
     def create(self, validated_data):
         options_data = validated_data.pop("options", None)

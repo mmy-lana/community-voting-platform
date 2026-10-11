@@ -1,9 +1,28 @@
 import type { AuditLogDTO, PollDetailDTO } from '@community/shared';
+import { useAppStore } from '../../lib/store';
 
-/** Dev staff bearer token; override via VITE_STAFF_API_TOKEN at build time. */
-export const STAFF_API_TOKEN = 'dev-staff-token';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/+$/, '');
 
-const BASE_URL = 'http://localhost:8102/api/v1';
+/**
+ * Resolves the staff bearer token from client state, with an optional
+ * build-time environment override. Never hardcodes a secret.
+ */
+function resolveStaffToken(): string {
+  return import.meta.env.VITE_STAFF_API_TOKEN || useAppStore.getState().staffToken || '';
+}
+
+/** Builds Authorization headers only when a token exists; falls back to session credentials. */
+function staffHeaders(extra: Record<string, string> = {}): RequestInit {
+  const token = resolveStaffToken();
+  return {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...extra,
+    },
+    credentials: 'include',
+  };
+}
 
 export interface StaffVote {
   id: number;
@@ -37,11 +56,12 @@ export class StaffApiError extends Error {
 }
 
 async function staffRequest<T>(path: string, init: RequestInit = {}): Promise<{ data: T; meta: { pagination?: PaginatedList<unknown>['pagination'] } | null }> {
+  const auth = staffHeaders();
   const response = await fetch(`${BASE_URL}${path}`, {
     ...init,
+    ...auth,
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${STAFF_API_TOKEN}`,
+      ...(auth.headers as Record<string, string>),
       ...(init.headers ?? {}),
     },
   });
@@ -157,7 +177,7 @@ export async function exportVotesCsv(filters: VoteListFilters = {}): Promise<voi
   if (filters.to) params.set('to', filters.to);
   const qs = params.toString();
   const response = await fetch(`${BASE_URL}/moderation/votes/export/${qs ? `?${qs}` : ''}`, {
-    headers: { Authorization: `Bearer ${STAFF_API_TOKEN}` },
+    ...staffHeaders(),
   });
   if (!response.ok) {
     throw new StaffApiError(response.status, 'EXPORT_FAILED', `Export failed with status ${response.status}`);

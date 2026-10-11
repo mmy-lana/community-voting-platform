@@ -128,6 +128,8 @@ class PollViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="vote")
     def vote(self, request, pk=None):
+        from django.core.cache import cache
+
         poll = Poll.objects.filter(pk=pk).first()
         if poll is None:
             raise APIError("NOT_FOUND", "Poll not found.", 404)
@@ -138,18 +140,28 @@ class PollViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         idempotency_key = request.headers.get("Idempotency-Key")
-        replay = False
+        cache_key = f"idempotency:{poll.pk}:{idempotency_key}" if idempotency_key else None
         if idempotency_key:
+            cached_payload = cache.get(cache_key)
+            if cached_payload is not None:
+                return Response(
+                    cached_payload,
+                    status=status.HTTP_201_CREATED,
+                    headers={"Idempotency-Replayed": "true"},
+                )
             existing = Vote.objects.filter(
                 poll_id=poll.pk, idempotency_key=idempotency_key
             ).first()
             if existing is not None:
-                vote = existing
-                replay = True
-            else:
-                vote, _ = serializer.cast_vote(
-                    poll, hash_voter_ip(client_ip(request)), idempotency_key
+                # Row exists but the 10-minute cache TTL expired: refuse replay.
+                raise APIError(
+                    "IDEMPOTENCY_REPLAY",
+                    "Idempotency key expired; request cannot be replayed.",
+                    409,
                 )
+            vote, _ = serializer.cast_vote(
+                poll, hash_voter_ip(client_ip(request)), idempotency_key
+            )
         else:
             vote, _ = serializer.cast_vote(poll, hash_voter_ip(client_ip(request)), None)
 
@@ -159,11 +171,10 @@ class PollViewSet(viewsets.ModelViewSet):
             "optionId": vote.option_id,
             "createdAt": vote.created_at,
         }
+        if cache_key is not None:
+            cache.set(cache_key, data, timeout=600)
         response = Response(data, status=status.HTTP_201_CREATED)
-        if replay:
-            response["Idempotency-Replayed"] = "true"
-        else:
-            response["Idempotency-Replayed"] = "false"
+        response["Idempotency-Replayed"] = "false"
         return response
 
     @action(detail=True, methods=["get"], url_path="results")

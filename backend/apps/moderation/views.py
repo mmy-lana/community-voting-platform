@@ -243,6 +243,14 @@ class ModerationVoteDeleteView(APIView):
     def delete(self, request, pk=None):
         from apps.core.rendering import APIError as _APIError
 
+        reason = str((request.data or {}).get("reason", "")).strip() if request.data else ""
+        if len(reason) < 5:
+            raise _APIError(
+                "VALIDATION_ERROR",
+                "A valid audit reason (minimum 5 characters) is required.",
+                400,
+            )
+
         with transaction.atomic():
             vote = Vote.objects.filter(pk=pk).first()
             if vote is None:
@@ -253,7 +261,7 @@ class ModerationVoteDeleteView(APIView):
                 action="vote.delete",
                 entity_type="vote",
                 entity_id=pk,
-                reason=(request.data or {}).get("reason") if request.data else None,
+                reason=reason,
             )
         return Response(status=204)
 
@@ -282,26 +290,46 @@ class ModerationBulkStatusView(APIView):
 
         updated = 0
         skipped = []
-        with transaction.atomic():
-            for poll_id in poll_ids:
-                poll = Poll.objects.filter(pk=poll_id).first()
-                if poll is None:
-                    skipped.append({"id": poll_id, "reason": "NOT_FOUND"})
-                    continue
-                if poll.status == target_status:
-                    skipped.append({"id": poll_id, "reason": "ALREADY_IN_STATUS"})
-                    continue
-                poll.status = target_status
-                poll.save(update_fields=["status", "updated_at"])
-                updated += 1
-            if updated:
+        try:
+            with transaction.atomic():
+                for poll_id in poll_ids:
+                    poll = Poll.objects.filter(pk=poll_id).first()
+                    if poll is None:
+                        skipped.append({"id": poll_id, "reason": "NOT_FOUND"})
+                        continue
+                    if poll.status == target_status:
+                        skipped.append({"id": poll_id, "reason": "ALREADY_IN_STATUS"})
+                        continue
+                    poll.status = target_status
+                    poll.save(update_fields=["status", "updated_at"])
+                    updated += 1
+                if updated:
+                    AuditLog.objects.create(
+                        actor=_actor_name(request),
+                        action="poll.bulk_status",
+                        entity_type="poll",
+                        entity_id=0,
+                        reason=reason,
+                    )
+        except Exception as exc:
+            # Primary transaction rolled back; write the abort audit entry on a
+            # separate connection/transaction so the failure is always recorded.
+            transaction.atomic(using="default").__enter__()
+            try:
                 AuditLog.objects.create(
                     actor=_actor_name(request),
-                    action="poll.bulk_status",
+                    action="poll.bulk_status.failed",
                     entity_type="poll",
                     entity_id=0,
-                    reason=reason,
+                    reason=f"Aborted: {exc}",
                 )
+            finally:
+                transaction.atomic(using="default").__exit__(None, None, None)
+            raise _APIError(
+                "INTERNAL_ERROR",
+                "Bulk status update aborted; no polls were changed.",
+                500,
+            )
         return Response({"updated": updated, "skipped": skipped}, status=200)
 
 

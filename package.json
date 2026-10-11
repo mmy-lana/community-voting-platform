@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@11.22.0",
   "scripts": {
-    "predev": "docker compose -p cvp -f docker/docker-compose.yml up -d --wait",
+    "predev": "docker compose -p cvp -f docker/docker-compose.yml up -d --wait db",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",

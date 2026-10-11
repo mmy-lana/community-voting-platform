@@ -15,6 +15,7 @@ import {
   setPollStatus,
 } from '../api';
 import { listPolls } from '../../polls/api';
+import { useAppStore } from '../../../lib/store';
 
 vi.mock('../api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../api')>();
@@ -99,6 +100,7 @@ const audit = {
 };
 
 function renderPage() {
+  useAppStore.setState({ staffToken: 'test-staff-token', staffSessionMode: false });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -112,6 +114,7 @@ function renderPage() {
 describe('ModerationPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAppStore.setState({ staffToken: null, staffSessionMode: false });
     mockStats.mockResolvedValue({ pollsTotal: 2, votesTotal: 15 });
     mockListPolls.mockResolvedValue(polls);
     mockListVotes.mockResolvedValue(votes);
@@ -199,5 +202,25 @@ describe('ModerationPage', () => {
     await user.click(screen.getByRole('button', { name: 'Bulk close selected' }));
 
     await waitFor(() => expect(mockBulk).toHaveBeenCalledWith([1], 'closed', expect.any(String)));
+  });
+
+  it('token gate blocks fetches and unlocks with a stored token', async () => {
+    const user = userEvent.setup();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <ToastProvider>
+          <ModerationPage />
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByLabelText('Staff access token')).toBeInTheDocument();
+    expect(mockStats).not.toHaveBeenCalled();
+
+    await user.type(screen.getByLabelText('Staff access token'), 'secret-token');
+    await user.click(screen.getByRole('button', { name: 'Unlock console' }));
+
+    expect(useAppStore.getState().staffToken).toBe('secret-token');
+    await waitFor(() => expect(screen.getByTestId('poll-controls')).toBeInTheDocument());
   });
 });

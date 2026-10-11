@@ -12,6 +12,7 @@ import {
   setPollStatus,
 } from '../api';
 import { listPolls } from '../../polls/api';
+import { useAppStore } from '../../../lib/store';
 import { samplePoll } from '../../../test/fixtures';
 
 vi.mock('../api', () => ({
@@ -67,6 +68,7 @@ function makeClient() {
 }
 
 function renderPage(queryClient: QueryClient) {
+  useAppStore.setState({ staffToken: 'test-staff-token', staffSessionMode: false });
   return render(
     <QueryClientProvider client={queryClient}>
       <ToastProvider>

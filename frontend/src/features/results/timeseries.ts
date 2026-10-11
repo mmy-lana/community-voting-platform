@@ -31,9 +31,15 @@ export function zeroFillTimeSeries(
   }
 
   const filled: TimeSeriesPointDTO[] = [];
-  // Buckets are generated from the window start; server date_trunc buckets are
-  // aligned to hour/day so an exact existing match absorbs the same timestamp.
-  let cursor = from;
+  // Floor the cursor to the interval boundary so generated bucket keys align
+  // exactly with the server's date_trunc('hour'|'day') UTC bucket starts.
+  const cursorDate = new Date(from);
+  if (granularity === 'daily') {
+    cursorDate.setUTCHours(0, 0, 0, 0);
+  } else {
+    cursorDate.setUTCMinutes(0, 0, 0);
+  }
+  let cursor = cursorDate.getTime();
 
   for (let i = 0; cursor <= to && i < MAX_BUCKETS; i += 1) {
     filled.push({

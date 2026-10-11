@@ -6,6 +6,7 @@ import axe from 'axe-core';
 import type { PollDTO, ResultDTO, TimeSeriesResponseDTO } from '@community/shared';
 import { RouterProvider } from '../app/router';
 import { ToastProvider } from '../components/Toast';
+import { useAppStore } from '../lib/store';
 import { NotFoundPage } from '../app/NotFoundPage';
 import { PollListPage } from '../features/polls/PollListPage';
 import { PollDetailPage } from '../features/polls/PollDetailPage';
@@ -174,6 +175,7 @@ describe('a11y (axe) — route-level accessibility', () => {
   });
 
   it('ModerationPage has no critical/serious/moderate violations', async () => {
+    useAppStore.setState({ staffToken: 'test-staff-token', staffSessionMode: false });
     const { container } = withProviders(<ModerationPage />);
     await expectNoSeriousViolations(container, 'ModerationPage');
   });

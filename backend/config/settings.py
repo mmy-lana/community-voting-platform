@@ -200,7 +200,22 @@ CORS_ALLOW_HEADERS = [
 # --- Domain salts ---
 VOTE_HASH_SALT = env("VOTE_HASH_SALT", "dev_pepper_salt_for_voter_ip_hashing")
 SEED_VOTE_SALT = env("SEED_VOTE_SALT", "dev_deterministic_seed_salt_for_fixtures")
-STAFF_API_TOKEN = env("STAFF_API_TOKEN", "dev-staff-token")
+_raw_staff_token = os.environ.get("STAFF_API_TOKEN", "").strip()
+_debug_mode = os.environ.get("DEBUG", "").strip().lower() in ("1", "true", "yes")
+if _raw_staff_token:
+    STAFF_API_TOKEN = _raw_staff_token
+elif _debug_mode:
+    # Dev convenience only; never enabled in production (DEBUG=false).
+    STAFF_API_TOKEN = "dev-staff-token"
+else:
+    STAFF_API_TOKEN = ""
+    import warnings  # noqa: E402
+
+    warnings.warn(
+        "STAFF_API_TOKEN is not set; staff bearer-token access is disabled. "
+        "Session staff authentication remains available.",
+        RuntimeWarning,
+    )
 
 # --- DRF ---
 REST_FRAMEWORK = {

@@ -6,7 +6,7 @@
  * Fire-and-forget, throttled client-side to at most one report per 5s.
  */
 
-const TELEMETRY_URL = 'http://localhost:8102/api/v1/telemetry/client-error/';
+const TELEMETRY_URL = `${(import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/+$/, '')}/telemetry/client-error/`;
 const THROTTLE_MS = 5_000;
 
 let lastSentAt = 0;

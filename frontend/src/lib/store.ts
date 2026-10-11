@@ -23,7 +23,10 @@ interface UiSlice {
 
 interface AuthSlice {
   staffToken: string | null;
+  /** True when the user chose to proceed without a bearer token (session auth). */
+  staffSessionMode: boolean;
   setStaffToken: (token: string | null) => void;
+  setStaffSessionMode: (enabled: boolean) => void;
 }
 
 export const useAppStore = create<VoteSessionSlice & UiSlice & AuthSlice>()((set) => ({
@@ -43,5 +46,7 @@ export const useAppStore = create<VoteSessionSlice & UiSlice & AuthSlice>()((set
   toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
 
   staffToken: null,
+  staffSessionMode: false,
   setStaffToken: (token) => set({ staffToken: token }),
+  setStaffSessionMode: (enabled) => set({ staffSessionMode: enabled }),
 }));

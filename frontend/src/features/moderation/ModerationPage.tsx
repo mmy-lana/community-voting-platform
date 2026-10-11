@@ -4,6 +4,7 @@ import type { AuditLogDTO } from '@community/shared';
 import { Badge, Button, EmptyState, Modal, Skeleton } from '../../components';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { useToast } from '../../components/Toast';
+import { useAppStore } from '../../lib/store';
 import { listPolls } from '../polls/api';
 import {
   StaffApiError,
@@ -440,16 +441,81 @@ function AuditLogTable() {
   );
 }
 
+function StaffAccessGate() {
+  const setStaffToken = useAppStore((s) => s.setStaffToken);
+  const setStaffSessionMode = useAppStore((s) => s.setStaffSessionMode);
+  const [token, setToken] = useState('');
+
+  return (
+    <section className="mx-auto max-w-md space-y-4 py-10" aria-labelledby="staff-gate-heading">
+      <h2 id="staff-gate-heading" className="text-2xl font-bold">
+        Staff Moderation Console
+      </h2>
+      <form
+        className="space-y-3 rounded-[--radius-card] border border-border bg-surface p-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const trimmed = token.trim();
+          if (trimmed) setStaffToken(trimmed);
+          else setStaffSessionMode(true);
+        }}
+      >
+        <label htmlFor="staff-token" className="block text-body font-medium">
+          Staff access token
+        </label>
+        <input
+          id="staff-token"
+          type="password"
+          autoComplete="off"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="Bearer token"
+          className="min-h-[44px] w-full rounded-[--radius-control] border border-border px-3 py-2 text-body"
+        />
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="submit"
+            className="min-h-[44px] min-w-[44px] rounded-[--radius-control] bg-accent px-4 text-body font-medium text-white hover:bg-accent-strong"
+          >
+            Unlock console
+          </button>
+          <button
+            type="button"
+            onClick={() => setStaffSessionMode(true)}
+            className="min-h-[44px] min-w-[44px] rounded-[--radius-control] border border-border px-4 text-body font-medium hover:bg-slate-100"
+          >
+            Use session auth
+          </button>
+        </div>
+        <p className="text-body-sm text-slate-500">
+          The token is kept in memory only and sent as a Bearer header. Staff with an
+          authenticated session can continue without a token.
+        </p>
+      </form>
+    </section>
+  );
+}
+
 export function ModerationPage() {
   const handleError = useStaffErrorHandler();
+  const staffToken = useAppStore((s) => s.staffToken);
+  const staffSessionMode = useAppStore((s) => s.staffSessionMode);
+  const hasEnvToken = Boolean(import.meta.env.VITE_STAFF_API_TOKEN);
+  const authenticated = hasEnvToken || Boolean(staffToken) || staffSessionMode;
 
   // Probe staff access with the cheapest staff endpoint; a 403 here means the
-  // whole console is unavailable to this visitor.
+  // whole console is unavailable to this visitor. Never fired before the
+  // visitor explicitly provides a token or opts into session auth.
   const accessQuery = useQuery({
     queryKey: ['moderation', 'access'],
     queryFn: getModerationStats,
     retry: false,
+    enabled: authenticated,
   });
+
+  if (!authenticated) {
+    return <StaffAccessGate />;
+  }
 
   if (accessQuery.isLoading) {
     return (

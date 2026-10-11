@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "predev": "docker compose -f ../docker/docker-compose.yml up -d --wait",
     "dev": "../.venv/bin/python manage.py runserver 0.0.0.0:8102",
     "build": "../.venv/bin/python -m compileall -q apps config manage.py",
     "lint": "../.venv/bin/python -m compileall -q apps config manage.py",

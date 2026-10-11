@@ -17,6 +17,12 @@ export default defineConfig({
   server: {
     port: 5102,
     host: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8102',
+        changeOrigin: true,
+      },
+    },
   },
   resolve: {
     alias: {

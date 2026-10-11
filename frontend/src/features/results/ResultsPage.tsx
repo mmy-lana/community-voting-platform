@@ -189,7 +189,7 @@ export function ResultsPage({ pollId }: { pollId: number }) {
                     type="button"
                     onClick={() => setGranularity(g)}
                     aria-pressed={granularity === g}
-                    className={`min-h-[44px] rounded-[--radius-control] px-3 text-body-sm font-medium ${
+                    className={`min-h-[44px] min-w-[44px] rounded-[--radius-control] px-3 text-body-sm font-medium ${
                       granularity === g ? 'bg-accent text-white' : 'bg-slate-100 text-ink'
                     }`}
                   >
