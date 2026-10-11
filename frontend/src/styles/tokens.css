@@ -1,6 +1,38 @@
 @import "tailwindcss";
 
+/* Runtime-only tokens (dark border variant, focus ring, responsive bar height). */
+:root {
+  --color-border-dark: #1e293b;
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #4338ca;
+  --chart-bar-h: 28px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --chart-bar-h: 32px;
+  }
+}
+
 @theme {
+  /* Spacing scale --space-1..8 (4/8/12/16/24/32/48/64px) and numeric 1..8 equivalents. */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 24px;
+  --spacing-6: 32px;
+  --spacing-7: 48px;
+  --spacing-8: 64px;
+  --spacing-space-1: 4px;
+  --spacing-space-2: 8px;
+  --spacing-space-3: 12px;
+  --spacing-space-4: 16px;
+  --spacing-space-5: 24px;
+  --spacing-space-6: 32px;
+  --spacing-space-7: 48px;
+  --spacing-space-8: 64px;
+  --spacing-touch: 44px;
+
   --color-surface: #ffffff;
   --color-surface-dark: #0b1220;
   --color-ink: #0b1220;

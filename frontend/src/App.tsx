@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { apiClient } from './lib/apiClient';
 import { RouterProvider, useRouter } from './app/router';
+import { ComponentShowcasePage } from './features/components/ComponentShowcasePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,10 @@ function RouteView() {
     );
   }
 
+  if (path === '/components') {
+    return <ComponentShowcasePage />;
+  }
+
   if (path === '/moderation') {
     return (
       <section className="space-y-4">
@@ -100,6 +105,7 @@ export function App() {
               <h1 className="text-xl font-bold tracking-tight">Community Voting Platform</h1>
               <nav className="flex space-x-4">
                 <a href="/" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Polls</a>
+                <a href="/components" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Components</a>
                 <a href="/moderation" className="text-sm font-medium hover:text-accent p-3 min-h-[44px] min-w-[44px] inline-flex items-center">Moderation</a>
               </nav>
             </div>

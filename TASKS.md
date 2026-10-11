@@ -15,11 +15,11 @@ Checklist — Tasks 1–6, executed in order. Each task must be verified before 
 
 ## Task 2 — Design System Primitives & Atomic UI
 
-- [ ] Define design tokens in `frontend/src/styles/tokens.css` with Tailwind v4 `@theme` mapping (colors, spacing, radii, typography, bar-chart palette, high-contrast vote states).
-- [ ] Build atomic components with typed props + Storybook-free visual checklist: Button, Badge, VoteCard, BarChart, ProgressBar, Modal, Toast, Skeleton, EmptyState, Spinner.
-- [ ] All interactive elements >= 44x44px touch targets; keyboard reachable; ARIA roles per specs/02-ui-primitives.md.
-- [ ] Responsive layout verified at 360 / 390 / 430 / 768 / 1024+ px breakpoints, mobile-first CSS ordering.
-- [ ] Unit tests for components (Vitest latest + React Testing Library) covering states: default, hover, focus-visible, active, disabled, voted, closed.
+- [x] Define design tokens in `frontend/src/styles/tokens.css` with Tailwind v4 `@theme` mapping (colors, spacing, radii, typography, bar-chart palette, high-contrast vote states).
+- [x] Build atomic components with typed props + Storybook-free visual checklist: Button, Badge, VoteCard, BarChart, ProgressBar, Modal, Toast, Skeleton, EmptyState, Spinner.
+- [x] All interactive elements >= 44x44px touch targets; keyboard reachable; ARIA roles per specs/02-ui-primitives.md.
+- [x] Responsive layout verified at 360 / 390 / 430 / 768 / 1024+ px breakpoints, mobile-first CSS ordering.
+- [x] Unit tests for components (Vitest latest + React Testing Library) covering states: default, hover, focus-visible, active, disabled, voted, closed.
 
 ## Task 3 — Feature Module 1: Polls & Vote Casting (End-to-End)
 
