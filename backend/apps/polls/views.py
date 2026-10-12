@@ -140,6 +140,12 @@ class PollViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         idempotency_key = request.headers.get("Idempotency-Key")
+        if idempotency_key and len(idempotency_key) > 64:
+            raise APIError(
+                "VALIDATION_ERROR",
+                "Idempotency-Key header exceeds maximum allowed length of 64 characters.",
+                400,
+            )
         cache_key = f"idempotency:{poll.pk}:{idempotency_key}" if idempotency_key else None
         prior_cache_key = None
         if idempotency_key:

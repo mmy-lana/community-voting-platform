@@ -29,6 +29,10 @@ export function ResultsPage({ pollId }: { pollId: number }) {
         currentIntervalRef.current = backoffIntervalMs(currentIntervalRef.current);
         return currentIntervalRef.current;
       }
+      // Immutable closed polls never change again: stop the polling loop.
+      if (query.state.data?.status === 'closed') {
+        return false;
+      }
       currentIntervalRef.current = adaptiveIntervalMs(unchangedCountRef.current);
       return currentIntervalRef.current;
     },

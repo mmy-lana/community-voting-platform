@@ -1,5 +1,6 @@
 import csv
 
+from django.core.cache import cache as django_cache
 from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
@@ -74,6 +75,8 @@ class ModerationActionView(APIView):
                 if vote is None:
                     raise APIError("NOT_FOUND", f"Vote {entity_id} not found.", 404)
                 entity_id = vote.id
+                if vote.idempotency_key:
+                    django_cache.delete(f"idempotency:{vote.poll_id}:{vote.idempotency_key}")
                 vote.delete()
 
             log = AuditLog.objects.create(
@@ -262,6 +265,8 @@ class ModerationVoteDeleteView(APIView):
             vote = Vote.objects.filter(pk=pk).first()
             if vote is None:
                 raise _APIError("NOT_FOUND", f"Vote {pk} not found.", 404)
+            if vote.idempotency_key:
+                django_cache.delete(f"idempotency:{vote.poll_id}:{vote.idempotency_key}")
             vote.delete()
             AuditLog.objects.create(
                 actor=_actor_name(request),

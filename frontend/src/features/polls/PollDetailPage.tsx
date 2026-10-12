@@ -16,6 +16,10 @@ function isExpired(poll: PollDetailDTO): boolean {
   return poll.closesAt !== null && new Date(poll.closesAt).getTime() <= Date.now();
 }
 
+function isNotStarted(poll: PollDetailDTO): boolean {
+  return poll.opensAt !== null && new Date(poll.opensAt).getTime() > Date.now();
+}
+
 export function PollDetailPage({ pollId }: { pollId: number }) {
   const { navigate } = useRouter();
   const { push } = useToast();
@@ -31,7 +35,8 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
   }, [pollId]);
 
   const poll = pollQuery.data;
-  const closed = poll !== undefined && (poll.status !== 'open' || isExpired(poll));
+  const closed =
+    poll !== undefined && (poll.status !== 'open' || isExpired(poll) || isNotStarted(poll));
   const hasVoted =
     voteEntry.status === 'success' || Boolean(poll?.userVotedOptionId) || alreadyVoted;
   const activeOptionId = voteEntry.optionId ?? poll?.userVotedOptionId ?? null;
@@ -92,7 +97,15 @@ export function PollDetailPage({ pollId }: { pollId: number }) {
           void submitVote(optionId);
         }}
         disabled={closed}
-        expiryLabel={closed ? (isExpired(poll) ? 'Voting closed' : 'Not open') : undefined}
+        expiryLabel={
+          closed
+            ? isNotStarted(poll)
+              ? 'Not open yet'
+              : isExpired(poll)
+                ? 'Voting closed'
+                : 'Not open'
+            : undefined
+        }
         onOpenResults={() => navigate(`/polls/${pollId}/results`)}
       />
       {hasVoted ? (
