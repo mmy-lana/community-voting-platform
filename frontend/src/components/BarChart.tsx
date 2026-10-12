@@ -45,9 +45,9 @@ export function BarChart({
           const width = Math.min(bucket.percentage, maxBarSize);
           const highlighted = highlightOptionId === bucket.optionId;
           return (
-            <div key={bucket.optionId} className="flex items-center gap-2">
+            <div key={bucket.optionId} className="flex items-center gap-2 max-sm:flex-col max-sm:items-stretch">
               <span
-                className="w-1/3 truncate text-body text-ink"
+                className="w-1/3 truncate text-body text-ink max-sm:w-full"
                 title={bucket.label}
               >
                 {bucket.label}

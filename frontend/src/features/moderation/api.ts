@@ -4,11 +4,11 @@ import { useAppStore } from '../../lib/store';
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/+$/, '');
 
 /**
- * Resolves the staff bearer token from client state, with an optional
- * build-time environment override. Never hardcodes a secret.
+ * Resolves the staff bearer token strictly from in-memory client state.
+ * Secrets are never baked into the build bundle.
  */
 function resolveStaffToken(): string {
-  return import.meta.env.VITE_STAFF_API_TOKEN || useAppStore.getState().staffToken || '';
+  return useAppStore.getState().staffToken || '';
 }
 
 /** Parses the Django CSRF cookie, if present. */

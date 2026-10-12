@@ -46,11 +46,13 @@ export function ResultsPage({ pollId }: { pollId: number }) {
   }, []);
 
   // Track consecutive unchanged responses for the adaptive ladder. Only
-  // genuinely new fetch results (new data identity) are considered.
+  // genuinely new fetch results (new data identity) are considered. All ref
+  // mutation happens in an effect, never during render.
   const signature = resultsQuery.data ? resultSignature(resultsQuery.data) : null;
   const prevSignatureRef = useRef<string | null>(null);
   const prevDataRef = useRef<ResultDTO | null>(null);
-  if (resultsQuery.data && resultsQuery.data !== prevDataRef.current) {
+  useEffect(() => {
+    if (!resultsQuery.data || resultsQuery.data === prevDataRef.current) return;
     if (prevSignatureRef.current !== null && signature === prevSignatureRef.current) {
       unchangedCountRef.current += 1;
     } else {
@@ -58,7 +60,7 @@ export function ResultsPage({ pollId }: { pollId: number }) {
     }
     prevSignatureRef.current = signature;
     prevDataRef.current = resultsQuery.data;
-  }
+  }, [resultsQuery.data, signature]);
 
   const results = resultsQuery.data;
 
@@ -118,7 +120,6 @@ export function ResultsPage({ pollId }: { pollId: number }) {
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" onClick={() => navigate('/')}>← All polls</Button>
         <Button variant="ghost" onClick={() => navigate(`/polls/${results.pollId}`)}>
           ← Poll detail
         </Button>
@@ -126,8 +127,10 @@ export function ResultsPage({ pollId }: { pollId: number }) {
       <nav aria-label="Breadcrumb" className="text-body-sm text-slate-500">
         <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }} className="inline-flex min-h-[44px] min-w-[44px] items-center p-2 hover:underline">Home</a>
         {' / '}
-        <a href={`/polls/${results.pollId}`} onClick={(e) => { e.preventDefault(); navigate(`/polls/${results.pollId}`); }} className="inline-flex min-h-[44px] min-w-[44px] items-center p-2 hover:underline">Polls</a>
-        {` / Poll #${results.pollId}`}
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }} className="inline-flex min-h-[44px] min-w-[44px] items-center p-2 hover:underline">Polls</a>
+        {' / '}
+        <a href={`/polls/${results.pollId}`} onClick={(e) => { e.preventDefault(); navigate(`/polls/${results.pollId}`); }} className="inline-flex min-h-[44px] min-w-[44px] items-center p-2 hover:underline">{`Poll #${results.pollId}`}</a>
+        {' / Results'}
       </nav>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">

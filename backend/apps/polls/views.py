@@ -153,11 +153,19 @@ class PollViewSet(viewsets.ModelViewSet):
                 poll_id=poll.pk, idempotency_key=idempotency_key
             ).first()
             if existing is not None:
-                # Row exists but the 10-minute cache TTL expired: refuse replay.
-                raise APIError(
-                    "IDEMPOTENCY_REPLAY",
-                    "Idempotency key expired; request cannot be replayed.",
-                    409,
+                # Cache TTL expired but the vote row exists: reconstruct the
+                # original VoteDTO and replay it — never a false 409.
+                replay_payload = {
+                    "id": existing.id,
+                    "pollId": existing.poll_id,
+                    "optionId": existing.option_id,
+                    "createdAt": existing.created_at.isoformat(),
+                }
+                cache.set(cache_key, replay_payload, timeout=600)
+                return Response(
+                    replay_payload,
+                    status=status.HTTP_201_CREATED,
+                    headers={"Idempotency-Replayed": "true"},
                 )
             vote, _ = serializer.cast_vote(
                 poll, hash_voter_ip(client_ip(request)), idempotency_key

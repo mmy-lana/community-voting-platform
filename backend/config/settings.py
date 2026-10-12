@@ -49,6 +49,21 @@ SECRET_KEY = env("SECRET_KEY", "dev-insecure-secret-key")
 DEBUG = env("DEBUG", "true").strip().lower() in ("1", "true", "yes", "on")
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1,backend")
 
+# --- Production startup assertions (fail fast on insecure config) ---
+if not DEBUG:
+    from django.core.exceptions import ImproperlyConfigured  # noqa: E402
+
+    if SECRET_KEY == "dev-insecure-secret-key":
+        raise ImproperlyConfigured(
+            "SECRET_KEY is still the insecure development default; "
+            "set a strong SECRET_KEY when DEBUG=false."
+        )
+    if not os.environ.get("STAFF_API_TOKEN", "").strip():
+        raise ImproperlyConfigured(
+            "STAFF_API_TOKEN must be set when DEBUG=false so staff bearer "
+            "access is available alongside session authentication."
+        )
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

@@ -502,8 +502,7 @@ export function ModerationPage() {
   const { navigate } = useRouter();
   const staffToken = useAppStore((s) => s.staffToken);
   const staffSessionMode = useAppStore((s) => s.staffSessionMode);
-  const hasEnvToken = Boolean(import.meta.env.VITE_STAFF_API_TOKEN);
-  const authenticated = hasEnvToken || Boolean(staffToken) || staffSessionMode;
+  const authenticated = Boolean(staffToken) || staffSessionMode;
 
   // Probe staff access with the cheapest staff endpoint; a 403 here means the
   // whole console is unavailable to this visitor. Never fired before the

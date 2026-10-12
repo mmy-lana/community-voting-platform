@@ -35,16 +35,15 @@ def seed_ip_hash(index: int, poll_key: str = "seed") -> str:
 
 
 def _trusted_proxy_networks():
-    """Loopback plus Docker bridge subnets by default; extras via TRUSTED_PROXIES.
+    """Loopback only by default; external proxies via TRUSTED_PROXIES.
 
-    Docker default bridge (172.16.0.0/12) is included so reverse-proxy hops
-    from nginx containers are trusted and client IPs never collapse to the
-    proxy's internal address.
+    Any reverse-proxy network (e.g. Docker bridge 172.16.0.0/12) must be
+    explicitly provided through the TRUSTED_PROXIES env var / setting so
+    arbitrary hosts cannot spoof X-Forwarded-For.
     """
     networks = [
         ipaddress.ip_network("127.0.0.0/8"),
         ipaddress.ip_network("::1/128"),
-        ipaddress.ip_network("172.16.0.0/12"),
     ]
     raw = getattr(settings, "TRUSTED_PROXIES", None)
     if raw is None:
