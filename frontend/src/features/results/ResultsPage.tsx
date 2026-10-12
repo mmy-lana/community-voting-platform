@@ -161,7 +161,7 @@ export function ResultsPage({ pollId }: { pollId: number }) {
                 data-testid="winner-callout"
                 className="rounded-[--radius-control] bg-voted/10 px-4 py-3 text-body-lg font-medium text-voted"
               >
-                Winner: {results.winner.label} (option #{results.winner.optionId})
+                Winner: {results.winner.label}
               </div>
             ) : (
               <div

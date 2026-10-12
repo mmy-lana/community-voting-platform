@@ -176,8 +176,11 @@ class VoteCreateSerializer(serializers.Serializer):
             existing = Vote.objects.filter(poll_id=poll.pk, voter_ip=voter_ip_hash).first()
             if existing is not None:
                 if poll.allow_revote:
+                    # Persist the revised option AND the fresh idempotency key so
+                    # DB lookups stay synchronized with the latest revision.
                     existing.option_id = option_id
-                    existing.save(update_fields=["option_id"])
+                    existing.idempotency_key = idempotency_key
+                    existing.save(update_fields=["option_id", "idempotency_key"])
                     return existing, False
                 raise APIError("VOTE_DUPLICATE", "Vote already recorded for this poll.", 409)
 

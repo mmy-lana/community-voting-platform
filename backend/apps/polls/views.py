@@ -141,6 +141,7 @@ class PollViewSet(viewsets.ModelViewSet):
 
         idempotency_key = request.headers.get("Idempotency-Key")
         cache_key = f"idempotency:{poll.pk}:{idempotency_key}" if idempotency_key else None
+        prior_cache_key = None
         if idempotency_key:
             cached_payload = cache.get(cache_key)
             if cached_payload is not None:
@@ -167,6 +168,13 @@ class PollViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_201_CREATED,
                     headers={"Idempotency-Replayed": "true"},
                 )
+            # allow_revote revisions: remember the vote's previous key so its
+            # stale cache entry can be invalidated after the update.
+            prior_vote = Vote.objects.filter(
+                poll_id=poll.pk, voter_ip=hash_voter_ip(client_ip(request))
+            ).first()
+            if prior_vote is not None and prior_vote.idempotency_key:
+                prior_cache_key = f"idempotency:{poll.pk}:{prior_vote.idempotency_key}"
             vote, _ = serializer.cast_vote(
                 poll, hash_voter_ip(client_ip(request)), idempotency_key
             )
@@ -181,6 +189,10 @@ class PollViewSet(viewsets.ModelViewSet):
             # to the fresh-response path (no datetime drift on replay).
             "createdAt": vote.created_at.isoformat(),
         }
+        # A revote changed the stored vote: evict the previous key's cache entry
+        # so replays of the old key can never serve a stale option reference.
+        if prior_cache_key is not None and prior_cache_key != cache_key:
+            cache.delete(prior_cache_key)
         if cache_key is not None:
             cache.set(cache_key, data, timeout=600)
         response = Response(data, status=status.HTTP_201_CREATED)
