@@ -28,8 +28,9 @@ class AuditLogPagination(EnvelopePagination):
 
 
 def _sanitize_csv_value(value):
-    """Prevent CSV formula injection: prefix leading =, +, -, @ with a quote."""
-    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@"):
+    """Prevent CSV formula injection: escape leading formula characters
+    (=, +, -, @, tab, CR, %) with a single quote, per OWASP guidance."""
+    if isinstance(value, str) and value[:1] in ("=", "+", "-", "@", "\t", "\r", "%"):
         return f"'{value}"
     return value
 
@@ -179,12 +180,26 @@ class ModerationVoteExportView(APIView):
 
     def get(self, request):
         qs = Vote.objects.all().order_by("created_at")
-        poll_id = request.query_params.get("poll")
+        params = request.query_params
+        poll_id = params.get("poll")
         if poll_id:
             try:
                 qs = qs.filter(poll_id=int(poll_id))
             except ValueError:
                 raise APIError("VALIDATION_ERROR", "poll must be an integer.", 400)
+        voter_ip = params.get("voter_ip")
+        if voter_ip:
+            # Substring match on the SHA-256 hash, mirroring the list view.
+            qs = qs.filter(voter_ip__icontains=voter_ip)
+        try:
+            date_from = params.get("from")
+            date_to = params.get("to")
+            if date_from:
+                qs = qs.filter(created_at__gte=parse_iso(date_from))
+            if date_to:
+                qs = qs.filter(created_at__lte=parse_iso(date_to))
+        except ValueError:
+            raise APIError("VALIDATION_ERROR", "Invalid from/to ISO datetime.", 400)
         if qs.count() > 100_000:
             raise APIError("VALIDATION_ERROR", "Export too large (cap 100k rows).", 400)
 

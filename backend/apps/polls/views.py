@@ -174,18 +174,17 @@ class PollViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_201_CREATED,
                     headers={"Idempotency-Replayed": "true"},
                 )
-            # allow_revote revisions: remember the vote's previous key so its
-            # stale cache entry can be invalidated after the update.
-            prior_vote = Vote.objects.filter(
-                poll_id=poll.pk, voter_ip=hash_voter_ip(client_ip(request))
-            ).first()
-            if prior_vote is not None and prior_vote.idempotency_key:
-                prior_cache_key = f"idempotency:{poll.pk}:{prior_vote.idempotency_key}"
-            vote, _ = serializer.cast_vote(
-                poll, hash_voter_ip(client_ip(request)), idempotency_key
-            )
-        else:
-            vote, _ = serializer.cast_vote(poll, hash_voter_ip(client_ip(request)), None)
+        # allow_revote revisions: remember the vote's previous key so its stale
+        # cache entry can be invalidated after the update — regardless of
+        # whether the incoming request supplied an Idempotency-Key header.
+        prior_vote = Vote.objects.filter(
+            poll_id=poll.pk, voter_ip=hash_voter_ip(client_ip(request))
+        ).first()
+        if prior_vote is not None and prior_vote.idempotency_key:
+            prior_cache_key = f"idempotency:{poll.pk}:{prior_vote.idempotency_key}"
+        vote, _ = serializer.cast_vote(
+            poll, hash_voter_ip(client_ip(request)), idempotency_key
+        )
 
         data = {
             "id": vote.id,

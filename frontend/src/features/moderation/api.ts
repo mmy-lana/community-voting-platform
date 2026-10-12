@@ -184,6 +184,7 @@ export async function getModerationStats(): Promise<Record<string, number>> {
 export async function exportVotesCsv(filters: VoteListFilters = {}): Promise<void> {
   const params = new URLSearchParams();
   if (filters.poll) params.set('poll', String(filters.poll));
+  if (filters.voterIp) params.set('voter_ip', filters.voterIp);
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
   const qs = params.toString();

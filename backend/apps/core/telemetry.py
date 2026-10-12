@@ -28,12 +28,20 @@ class ClientErrorView(APIView):
         import logging
 
         payload = serializer.validated_data
+
+        def _strip_crlf(value):
+            # Log injection mitigation: CR/LF would let an attacker forge
+            # additional structured-log entries via a crafted payload.
+            if isinstance(value, str):
+                return value.replace("\r", "").replace("\n", "")
+            return value
+
         logging.getLogger("telemetry").warning(
             "client-error",
             extra={
-                "route": payload["route"],
-                "errorName": payload["error_name"],
-                "requestId": payload.get("request_id", ""),
+                "route": _strip_crlf(payload["route"]),
+                "errorName": _strip_crlf(payload["error_name"]),
+                "requestId": _strip_crlf(payload.get("request_id", "")),
                 "clientRequestId": getattr(request, "request_id", ""),
             },
         )

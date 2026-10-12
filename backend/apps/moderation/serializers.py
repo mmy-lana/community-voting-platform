@@ -23,8 +23,15 @@ class ModerationActionSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     def validate(self, attrs):
-        if attrs["action"] == "vote.delete" and not (attrs.get("reason") or "").strip():
-            raise serializers.ValidationError(
-                {"reason": "A reason is required for destructive actions."}
-            )
+        if attrs["action"] == "vote.delete":
+            reason = (attrs.get("reason") or "").strip()
+            if len(reason) < 5:
+                raise serializers.ValidationError(
+                    {
+                        "reason": (
+                            "A valid audit reason (minimum 5 characters) is required "
+                            "for destructive actions."
+                        )
+                    }
+                )
         return attrs
